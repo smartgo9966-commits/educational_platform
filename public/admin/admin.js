@@ -37,7 +37,7 @@ const state = {
 
 // ---- Init -----------------------------------------------------------------
 loadStats();
-loadClassrooms().then(() => loadUsers(state.currentTab));
+loadClassrooms().finally(() => loadUsers(state.currentTab));
 loadActivityLog();
 
 // ---- Stats ----------------------------------------------------------------
@@ -65,9 +65,13 @@ function fmtNumber(n) {
 
 // ---- Classrooms -----------------------------------------------------------
 async function loadClassrooms() {
-  const snap = await getDocs(collection(db, 'classrooms'));
-  state.classrooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  populateClassroomSelects();
+  try {
+    const snap = await getDocs(collection(db, 'classrooms'));
+    state.classrooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    populateClassroomSelects();
+  } catch {
+    // Classrooms optional — continue without them
+  }
 }
 
 function populateClassroomSelects() {
