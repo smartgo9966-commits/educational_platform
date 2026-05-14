@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, getCountFromServer, setDoc,
-  query, where, orderBy, limit, startAfter, onSnapshot,
+  query, where, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 import { requireRole } from '../shared/js/auth.js';
@@ -27,8 +27,6 @@ const state = {
   currentTab: 'students',
   allRows: [],
   filteredRows: [],
-  cursor: null,
-  prevCursors: [],
   page: 1,
   pageSize: 10,
   searchTerm: '',
@@ -81,18 +79,18 @@ function populateClassroomSelects() {
 }
 
 // ---- Users table ----------------------------------------------------------
-async function loadUsers(role, cursor = null) {
+async function loadUsers(role) {
   showTableLoading();
   try {
-    const constraints = [
-      where('role', '==', role),
-      orderBy('createdAt', 'desc'),
-      limit(200)
-    ];
-    if (cursor) constraints.push(startAfter(cursor));
-    const q = query(collection(db, 'users'), ...constraints);
+    const q = query(collection(db, 'users'), where('role', '==', role), limit(200));
     const snap = await getDocs(q);
-    state.allRows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    state.allRows = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() ?? (a.createdAt?.seconds * 1000) ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? (b.createdAt?.seconds * 1000) ?? 0;
+        return tb - ta;
+      });
     state.page = 1;
     applySearch();
   } catch (err) {
