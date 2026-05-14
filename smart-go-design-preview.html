@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Go — Design System Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-blue:#1E90FF; --primary-blue-hover:#1976D2; --primary-blue-active:#1565C0; --primary-blue-soft:#E3F2FD;
+  --primary-teal:#00D1B2; --primary-teal-hover:#00B89F; --primary-teal-active:#00A085; --primary-teal-soft:#E0F7F4;
+  --gradient-primary:linear-gradient(135deg,#1E90FF 0%,#00D1B2 100%);
+  --gradient-primary-hover:linear-gradient(135deg,#1976D2 0%,#00B89F 100%);
+  --gradient-primary-active:linear-gradient(135deg,#1565C0 0%,#00A085 100%);
+  --gradient-soft:linear-gradient(135deg,rgba(30,144,255,0.08),rgba(0,209,178,0.08));
+  --bg-app:#F8FAFC; --bg-surface:#FFFFFF; --bg-subtle:#F1F5F9; --bg-tint-blue:#F0F7FF; --bg-tint-teal:#ECFDF7;
+  --text-primary:#0B1F3A; --text-secondary:#344563; --text-tertiary:#64748B; --text-disabled:#94A3B8;
+  --text-on-brand:#FFFFFF; --text-link:#1E90FF; --text-link-hover:#1565C0;
+  --border-subtle:#F1F5F9; --border-default:#E2E8F0; --border-strong:#CBD5E1; --border-focus:#1E90FF;
+  --success:#10B981; --success-soft:#ECFDF5; --success-text:#047857;
+  --warning:#F59E0B; --warning-soft:#FFFBEB; --warning-text:#B45309;
+  --error:#EF4444;   --error-soft:#FEF2F2;   --error-text:#B91C1C;
+  --info:#1E90FF;    --info-soft:#EFF6FF;
+  --shadow-xs:0 1px 2px rgba(11,31,58,.04);
+  --shadow-sm:0 1px 3px rgba(11,31,58,.06),0 1px 2px rgba(11,31,58,.04);
+  --shadow-md:0 4px 12px rgba(11,31,58,.06),0 1px 3px rgba(11,31,58,.04);
+  --shadow-lg:0 12px 24px rgba(11,31,58,.08),0 4px 8px rgba(11,31,58,.04);
+  --shadow-glow-blue:0 0 0 4px rgba(30,144,255,.12),0 4px 16px rgba(30,144,255,.18);
+  --shadow-glow-teal:0 0 0 4px rgba(0,209,178,.12),0 4px 16px rgba(0,209,178,.18);
+  --shadow-glow-brand:0 4px 20px rgba(30,144,255,.20),0 4px 20px rgba(0,209,178,.18);
+  --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:14px; --radius-xl:20px; --radius-pill:999px;
+  --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px; --space-12:48px;
+  --font-body:"Inter",system-ui,sans-serif;
+  --font-display:"Space Grotesk","Inter",system-ui,sans-serif;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font:400 16px/1.5 var(--font-body);color:var(--text-primary);background:var(--bg-app);
+  background-image:radial-gradient(circle at 10% 0%,rgba(30,144,255,.08),transparent 50%),radial-gradient(circle at 90% 100%,rgba(0,209,178,.08),transparent 50%);
+  min-height:100vh;padding:48px 24px}
+.container{max-width:1180px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--font-display);color:var(--text-primary);line-height:1.2;letter-spacing:-.01em}
+h1{font-size:48px;font-weight:700;margin-bottom:8px}
+h2{font-size:30px;font-weight:700;margin:48px 0 20px}
+h3{font-size:20px;font-weight:600;margin:24px 0 12px}
+.brand-wordmark{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.02em;
+  background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;color:transparent}
+p{color:var(--text-secondary)}
+small{color:var(--text-tertiary);font-size:12px}
+
+/* Hero */
+.hero{background:var(--gradient-soft);border:1px solid var(--primary-blue-soft);
+  border-radius:var(--radius-xl);padding:48px;margin-bottom:48px}
+.hero-title{font-size:48px;line-height:1.1;font-weight:700;font-family:var(--font-display);letter-spacing:-.02em}
+.hero-title .grad{background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{color:var(--text-tertiary);font-size:18px;margin-top:12px;max-width:600px}
+.hero-cta{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* Tokens */
+.section{margin-bottom:48px}
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.swatch{background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:var(--radius-md);padding:12px;box-shadow:var(--shadow-xs)}
+.swatch-color{height:60px;border-radius:var(--radius-sm);margin-bottom:10px;border:1px solid rgba(11,31,58,.04)}
+.swatch-name{font-weight:600;font-size:13px;color:var(--text-primary)}
+.swatch-hex{font-family:ui-monospace,monospace;font-size:11px;color:var(--text-tertiary);margin-top:2px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;font:600 14px/1 var(--font-body);
+  border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;
+  transition:all 160ms var(--ease);white-space:nowrap}
+.btn-primary{background:var(--gradient-primary);color:var(--text-on-brand);box-shadow:var(--shadow-sm)}
+.btn-primary:hover{background:var(--gradient-primary-hover);box-shadow:var(--shadow-glow-brand)}
+.btn-primary:active{background:var(--gradient-primary-active);transform:scale(.98)}
+.btn-secondary{background:var(--bg-surface);color:var(--text-primary);border-color:var(--border-default)}
+.btn-secondary:hover{background:var(--bg-tint-blue);border-color:var(--primary-blue);color:var(--primary-blue-hover)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--bg-subtle);color:var(--text-primary)}
+.btn-danger{background:var(--error);color:var(--text-on-brand)}
+.btn-danger:hover{background:#DC2626;box-shadow:0 4px 16px rgba(239,68,68,.25)}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:24px;
+  transition:all 200ms var(--ease)}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.card-feature{background:var(--gradient-soft);border-color:var(--primary-blue-soft)}
+.card-title{font:600 20px/1.3 var(--font-display);margin-bottom:6px}
+.card-sub{font-size:14px;color:var(--text-tertiary);margin-bottom:16px}
+
+/* Badges */
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;
+  font:500 12px/1 var(--font-body);border-radius:var(--radius-pill)}
+.badge-blue{background:var(--primary-blue-soft);color:var(--primary-blue-active)}
+.badge-teal{background:var(--primary-teal-soft);color:var(--primary-teal-active)}
+.badge-success{background:var(--success-soft);color:var(--success-text)}
+.badge-warning{background:var(--warning-soft);color:var(--warning-text)}
+.badge-error{background:var(--error-soft);color:var(--error-text)}
+
+/* Inputs */
+.input{width:100%;padding:10px 14px;background:var(--bg-surface);
+  border:1px solid var(--border-default);border-radius:var(--radius-sm);
+  font:400 16px/1.4 var(--font-body);color:var(--text-primary);
+  transition:all 160ms var(--ease)}
+.input::placeholder{color:var(--text-disabled)}
+.input:hover{border-color:var(--border-strong)}
+.input:focus{outline:none;border-color:var(--border-focus);box-shadow:var(--shadow-glow-blue)}
+
+/* Section types */
+.demo-section{padding:32px;border-radius:var(--radius-lg);margin-bottom:16px}
+.demo-section.section-tinted{background:var(--bg-tint-blue);border:1px solid var(--border-subtle)}
+.demo-section.section-teal{background:var(--bg-tint-teal);border:1px solid var(--primary-teal-soft)}
+.demo-section.section-hero{background:var(--gradient-soft);border-radius:var(--radius-xl)}
+
+/* Links */
+.link-demo{display:flex;gap:24px;align-items:center;flex-wrap:wrap;font-size:16px}
+.link-demo a{color:var(--text-link);text-decoration:none;transition:color 160ms var(--ease)}
+.link-demo a:hover{color:var(--text-link-hover);text-decoration:underline;text-underline-offset:3px}
+.link-grad{background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;
+  color:transparent;font-weight:600}
+
+/* Stat tiles */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:16px}
+.stat{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-md);
+  padding:20px;box-shadow:var(--shadow-xs)}
+.stat-label{font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em}
+.stat-value{font:700 32px/1.1 var(--font-display);margin-top:4px;
+  background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat-delta{font-size:13px;color:var(--success);margin-top:4px}
+
+/* Shadow demo */
+.shadows{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px}
+.shadow-demo{background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:var(--radius-md);padding:24px;text-align:center;font-size:13px;color:var(--text-tertiary)}
+.shadow-demo strong{display:block;color:var(--text-primary);margin-top:6px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header style="margin-bottom:48px">
+    <div class="brand-wordmark">Smart Go</div>
+    <small>Design System Preview · Light Theme</small>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1 class="hero-title">Modern, futuristic, <span class="grad">quietly neon</span>.</h1>
+    <p class="hero-sub">A light-theme system built around a blue → teal gradient, soft cool whites, and dark navy text. Premium SaaS feel without being loud.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary">Get started →</button>
+      <button class="btn btn-secondary">Learn more</button>
+    </div>
+  </div>
+
+  <!-- COLORS -->
+  <h2>Primary</h2>
+  <div class="tokens">
+    <div class="swatch"><div class="swatch-color" style="background:#1E90FF"></div><div class="swatch-name">Primary Blue</div><div class="swatch-hex">#1E90FF</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1976D2"></div><div class="swatch-name">Blue Hover</div><div class="swatch-hex">#1976D2</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1565C0"></div><div class="swatch-name">Blue Active</div><div class="swatch-hex">#1565C0</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#E3F2FD"></div><div class="swatch-name">Blue Soft</div><div class="swatch-hex">#E3F2FD</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00D1B2"></div><div class="swatch-name">Primary Teal</div><div class="swatch-hex">#00D1B2</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00B89F"></div><div class="swatch-name">Teal Hover</div><div class="swatch-hex">#00B89F</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00A085"></div><div class="swatch-name">Teal Active</div><div class="swatch-hex">#00A085</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#E0F7F4"></div><div class="swatch-name">Teal Soft</div><div class="swatch-hex">#E0F7F4</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(135deg,#1E90FF 0%,#00D1B2 100%)"></div><div class="swatch-name">Gradient Primary</div><div class="swatch-hex">135° blue → teal</div></div>
+  </div>
+
+  <h2>Backgrounds & Text</h2>
+  <div class="tokens">
+    <div class="swatch"><div class="swatch-color" style="background:#F8FAFC;border:1px solid #E2E8F0"></div><div class="swatch-name">App Background</div><div class="swatch-hex">#F8FAFC</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#FFFFFF;border:1px solid #E2E8F0"></div><div class="swatch-name">Surface</div><div class="swatch-hex">#FFFFFF</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#F1F5F9;border:1px solid #E2E8F0"></div><div class="swatch-name">Subtle</div><div class="swatch-hex">#F1F5F9</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#F0F7FF;border:1px solid #E2E8F0"></div><div class="swatch-name">Tint Blue</div><div class="swatch-hex">#F0F7FF</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#ECFDF7;border:1px solid #E2E8F0"></div><div class="swatch-name">Tint Teal</div><div class="swatch-hex">#ECFDF7</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#0B1F3A"></div><div class="swatch-name">Text Primary</div><div class="swatch-hex">#0B1F3A</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#344563"></div><div class="swatch-name">Text Secondary</div><div class="swatch-hex">#344563</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#64748B"></div><div class="swatch-name">Text Tertiary</div><div class="swatch-hex">#64748B</div></div>
+  </div>
+
+  <h2>Status</h2>
+  <div class="tokens">
+    <div class="swatch"><div class="swatch-color" style="background:#10B981"></div><div class="swatch-name">Success</div><div class="swatch-hex">#10B981</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#F59E0B"></div><div class="swatch-name">Warning</div><div class="swatch-hex">#F59E0B</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#EF4444"></div><div class="swatch-name">Error</div><div class="swatch-hex">#EF4444</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1E90FF"></div><div class="swatch-name">Info</div><div class="swatch-hex">#1E90FF</div></div>
+  </div>
+
+  <!-- BUTTONS -->
+  <h2>Buttons</h2>
+  <div class="card">
+    <h3>Primary</h3>
+    <div class="btn-row">
+      <button class="btn btn-primary">Save & Generate QR</button>
+      <button class="btn btn-primary" disabled style="opacity:.6;cursor:not-allowed">Disabled</button>
+    </div>
+    <h3>Secondary</h3>
+    <div class="btn-row">
+      <button class="btn btn-secondary">📷 Scan QR</button>
+      <button class="btn btn-secondary">+ Add user</button>
+    </div>
+    <h3>Ghost & Destructive</h3>
+    <div class="btn-row">
+      <button class="btn btn-ghost">View profile</button>
+      <button class="btn btn-ghost">Edit</button>
+      <button class="btn btn-danger">Delete user</button>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <h2>Cards</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">Default card</div>
+      <div class="card-sub">White surface, subtle border, soft shadow</div>
+      <div class="badges"><span class="badge badge-neutral">Lesson</span></div>
+    </div>
+    <div class="card card-feature">
+      <div class="card-title">Feature card</div>
+      <div class="card-sub">Gradient soft background with blue-tinted border</div>
+      <button class="btn btn-primary" style="margin-top:8px">Try it now</button>
+    </div>
+    <div class="card">
+      <div class="card-title">User profile</div>
+      <div class="card-sub">fares@example.com</div>
+      <div class="badges">
+        <span class="badge badge-blue">Teacher</span>
+        <span class="badge badge-success">Active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <h2>Stat tiles</h2>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total students</div><div class="stat-value">2,847</div><div class="stat-delta">↑ 12 this week</div></div>
+    <div class="stat"><div class="stat-label">Active teachers</div><div class="stat-value">142</div><div class="stat-delta">↑ 3 this week</div></div>
+    <div class="stat"><div class="stat-label">Files uploaded</div><div class="stat-value">9,431</div><div class="stat-delta">↑ 88 today</div></div>
+    <div class="stat"><div class="stat-label">Board sessions</div><div class="stat-value">312</div><div class="stat-delta">↑ 24 today</div></div>
+  </div>
+
+  <!-- SECTIONS -->
+  <h2>Sections</h2>
+  <div class="demo-section section-hero">
+    <h3 style="font-size:24px">Hero section · gradient soft background</h3>
+    <p>Used for the top hero on every role-page. Wide, airy, high-impact.</p>
+  </div>
+  <div class="demo-section section-tinted">
+    <h3 style="font-size:24px">Tinted section · blue tint</h3>
+    <p>Used to break up neutral sections. Subtle, not loud.</p>
+  </div>
+  <div class="demo-section section-teal">
+    <h3 style="font-size:24px">Tinted section · teal tint</h3>
+    <p>Alternate accent for variation. Use sparingly — one tinted moment per screen.</p>
+  </div>
+
+  <!-- BADGES -->
+  <h2>Badges</h2>
+  <div class="card"><div class="badges">
+    <span class="badge badge-blue">Lesson</span>
+    <span class="badge badge-teal">Smart Board</span>
+    <span class="badge badge-success">Uploaded</span>
+    <span class="badge badge-warning">Frozen</span>
+    <span class="badge badge-error">Expired</span>
+  </div></div>
+
+  <!-- LINKS -->
+  <h2>Links</h2>
+  <div class="card link-demo">
+    <a href="#">Standard link</a>
+    <a href="#" class="link-grad">Gradient link</a>
+    <span style="color:var(--text-tertiary)">Helper text alongside</span>
+  </div>
+
+  <!-- INPUTS -->
+  <h2>Inputs</h2>
+  <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <input class="input" placeholder="Email address">
+    <input class="input" type="password" placeholder="Password" value="•••••••••">
+    <input class="input" placeholder="Disabled" disabled style="background:var(--bg-subtle);color:var(--text-disabled)">
+    <input class="input" placeholder="Search files" value="">
+  </div>
+
+  <!-- SHADOWS -->
+  <h2>Shadows</h2>
+  <div class="shadows">
+    <div class="shadow-demo" style="box-shadow:var(--shadow-sm)"><strong>Shadow SM</strong>Default cards</div>
+    <div class="shadow-demo" style="box-shadow:var(--shadow-md)"><strong>Shadow MD</strong>Hovered cards</div>
+    <div class="shadow-demo" style="box-shadow:var(--shadow-lg)"><strong>Shadow LG</strong>Modals</div>
+    <div class="shadow-demo" style="box-shadow:var(--shadow-glow-blue)"><strong>Glow Blue</strong>Focus ring</div>
+    <div class="shadow-demo" style="box-shadow:var(--shadow-glow-teal)"><strong>Glow Teal</strong>Teal focus</div>
+    <div class="shadow-demo" style="box-shadow:var(--shadow-glow-brand)"><strong>Glow Brand</strong>Primary CTA hover</div>
+  </div>
+
+  <footer style="margin-top:64px;padding-top:32px;border-top:1px solid var(--border-default);color:var(--text-tertiary);font-size:13px;text-align:center">
+    Smart Go · light-theme design system · drop these tokens into <code style="background:var(--bg-subtle);padding:2px 6px;border-radius:4px;font-family:ui-monospace,monospace">public/shared/css/variables.css</code>
+  </footer>
+</div>
+</body>
+</html>

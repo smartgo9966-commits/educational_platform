@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function isSignedIn() { return request.auth != null; }
+    function uid()        { return request.auth.uid; }
+
+    // Role is read from the user's Firestore doc (no JWT custom claims needed).
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(uid())).data.role;
+    }
+
+    // Hardcoded admin emails — always have admin access even before their doc exists.
+    function isAdminEmail() {
+      return request.auth.token.email == 'faresayman12316@gmail.com' ||
+             request.auth.token.email == 'smart.go.9966@gmail.com';
+    }
+
+    function isAdmin()   { return isSignedIn() && (isAdminEmail() || getRole() == 'admin'); }
+    function isTeacher() { return isSignedIn() && getRole() == 'teacher'; }
+    function isStudent() { return isSignedIn() && getRole() == 'student'; }
+    function isBoard()   { return isSignedIn() && getRole() == 'board'; }
+
+    function notFrozen() {
+      return get(/databases/$(database)/documents/users/$(uid())).data.frozen == false;
+    }
+    function userClassrooms() {
+      return get(/databases/$(database)/documents/users/$(uid())).data.classroomIds;
+    }
+
+    // ---------- users ----------
+    // Self-read is allowed directly (avoids recursive get() on own doc).
+    match /users/{userId} {
+      allow read:   if (isSignedIn() && uid() == userId) || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() ||
+                       (isSignedIn() && uid() == userId &&
+                        request.resource.data.diff(resource.data)
+                          .changedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- files ----------
+    match /files/{fileId} {
+      allow read:   if isAdmin() ||
+                       (isTeacher() && notFrozen()) ||
+                       (isStudent() && notFrozen() &&
+                        resource.data.classroomId in userClassrooms());
+      allow create: if isTeacher() && notFrozen() &&
+                       request.resource.data.ownerId == uid();
+      allow update: if isAdmin() ||
+                       (isTeacher() && notFrozen() && resource.data.ownerId == uid());
+      allow delete: if isAdmin() ||
+                       (isTeacher() && resource.data.ownerId == uid());
+    }
+
+    // ---------- board_sessions ----------
+    match /board_sessions/{sessionId} {
+      allow create: if isSignedIn() &&
+                       request.resource.data.claimed == false;
+      allow read:   if isTeacher() || isAdmin() || isBoard();
+      allow update: if isTeacher() &&
+                       resource.data.claimed == false &&
+                       request.resource.data.claimed == true &&
+                       request.resource.data.claimedBy == uid() &&
+                       request.resource.data.diff(resource.data)
+                         .changedKeys().hasOnly(['claimed', 'claimedBy', 'claimedAt']);
+      allow delete: if false;
+    }
+
+    // ---------- classrooms ----------
+    match /classrooms/{classroomId} {
+      allow read:   if isAdmin() ||
+                       (isSignedIn() && (uid() in resource.data.teacherIds ||
+                                         uid() in resource.data.studentIds));
+      allow write:  if isAdmin();
+    }
+
+    // ---------- activity_logs ----------
+    match /activity_logs/{logId} {
+      allow read:   if isAdmin() ||
+                       (isSignedIn() && resource.data.userId == uid());
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update, delete: if false;
+    }
+  }
+}

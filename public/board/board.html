@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Go — Smart Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/css/reset.css">
+  <link rel="stylesheet" href="../shared/css/variables.css">
+  <link rel="stylesheet" href="../shared/css/base.css">
+  <link rel="stylesheet" href="../shared/css/components.css">
+  <link rel="stylesheet" href="./board.css">
+</head>
+<body>
+
+  <!-- ===== Board Header ===== -->
+  <header class="board-header">
+
+    <!-- Left: wordmark -->
+    <a href="../index.html" class="board-wordmark">Smart Go</a>
+
+    <!-- Center: toolbar -->
+    <div class="board-toolbar" role="toolbar" aria-label="Drawing tools">
+
+      <!-- Draw tools -->
+      <button class="board-tool-btn active" id="tool-pen" data-tool="pen" title="Pen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+        </svg>
+      </button>
+
+      <button class="board-tool-btn" id="tool-eraser" data-tool="eraser" title="Eraser">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+          <path d="M22 21H7"/>
+          <path d="m5 11 9 9"/>
+        </svg>
+      </button>
+
+      <button class="board-tool-btn" id="tool-text" data-tool="text" title="Text">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 7 4 4 20 4 20 7"/>
+          <line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </button>
+
+      <button class="board-tool-btn" id="tool-rect" data-tool="rect" title="Rectangle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+        </svg>
+      </button>
+
+      <button class="board-tool-btn" id="tool-circle" data-tool="circle" title="Circle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9"/>
+        </svg>
+      </button>
+
+      <div class="board-sep"></div>
+
+      <!-- Color picker -->
+      <label class="board-color-wrap" title="Pick color">
+        <input type="color" id="tool-color" value="#0B1F3A">
+        <span class="board-color-swatch" id="color-swatch"></span>
+      </label>
+
+      <!-- Stroke size presets -->
+      <div class="board-size-group">
+        <button class="board-size-btn" data-size="2" title="Thin">
+          <span class="board-size-dot" style="width:5px;height:5px;border-radius:50%;background:currentColor;display:block;"></span>
+        </button>
+        <button class="board-size-btn active" data-size="5" title="Medium">
+          <span class="board-size-dot" style="width:9px;height:9px;border-radius:50%;background:currentColor;display:block;"></span>
+        </button>
+        <button class="board-size-btn" data-size="14" title="Thick">
+          <span class="board-size-dot" style="width:14px;height:14px;border-radius:50%;background:currentColor;display:block;"></span>
+        </button>
+      </div>
+
+      <div class="board-sep"></div>
+
+      <!-- Undo / Redo -->
+      <button class="board-tool-btn" id="action-undo" title="Undo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7v6h6"/>
+          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+        </svg>
+      </button>
+
+      <button class="board-tool-btn" id="action-redo" title="Redo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 7v6h-6"/>
+          <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+        </svg>
+      </button>
+
+      <div class="board-sep"></div>
+
+      <!-- Clear -->
+      <button class="board-tool-btn board-tool-danger" id="action-clear" title="Clear board">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Right: actions -->
+    <div class="board-header-right">
+      <button class="btn btn-primary board-save-btn" id="action-save-qr">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Save &amp; Generate QR
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Canvas ===== -->
+  <main class="board-main">
+    <canvas id="board-canvas"></canvas>
+  </main>
+
+  <!-- ===== QR Modal ===== -->
+  <div class="modal-backdrop hidden" id="qr-modal">
+    <div class="modal modal-qr">
+      <h2 class="modal-title">Scan from your teacher account</h2>
+
+      <div class="qr-expiry-wrap">
+        <span class="qr-expiry-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          This code expires in <strong id="qr-countdown">10:00</strong>
+        </span>
+      </div>
+
+      <div class="qr-frame">
+        <span class="qr-corner qr-tl"></span>
+        <span class="qr-corner qr-tr"></span>
+        <span class="qr-corner qr-bl"></span>
+        <span class="qr-corner qr-br"></span>
+        <div id="qr-target" class="qr-target"></div>
+      </div>
+
+      <p class="qr-hint">Open the Smart Go app on your mobile device to scan and connect instantly.</p>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="qr-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor scripts (Fabric.js + QRCode.js via CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script type="module" src="./board.js"></script>
+</body>
+</html>

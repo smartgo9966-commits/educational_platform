@@ -1,0 +1,287 @@
+/* ============================================================================
+   Board page — page-specific styles only
+   ============================================================================ */
+
+/* ---- Board Header -------------------------------------------------------- */
+
+.board-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: var(--space-4);
+}
+
+.board-wordmark {
+  font: 700 var(--text-xl)/1 var(--font-display);
+  letter-spacing: -0.02em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+/* ---- Toolbar ------------------------------------------------------------- */
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.board-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border-default);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Tool buttons (draw tools) */
+.board-tool-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition:
+    background var(--duration-2) var(--ease),
+    color var(--duration-2) var(--ease);
+}
+.board-tool-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+.board-tool-btn.active {
+  background: var(--primary-blue);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-xs);
+}
+.board-tool-btn.active:hover {
+  background: var(--primary-blue-hover);
+  color: var(--text-on-brand);
+}
+.board-tool-danger:hover {
+  background: var(--error-soft);
+  color: var(--error-text);
+}
+
+/* Color picker (hidden input + visible swatch) */
+.board-color-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-2) var(--ease);
+}
+.board-color-wrap:hover { background: var(--bg-surface); }
+
+.board-color-wrap input[type="color"] {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.board-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Stroke size presets */
+.board-size-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.board-size-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: background var(--duration-2) var(--ease);
+}
+.board-size-btn:hover { background: var(--bg-surface); }
+.board-size-btn.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ---- Header right -------------------------------------------------------- */
+
+.board-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.board-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition:
+    background var(--duration-2) var(--ease),
+    color var(--duration-2) var(--ease);
+}
+.board-icon-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.board-save-btn {
+  border-radius: var(--radius-pill);
+  padding: 10px 18px;
+  font-size: var(--text-sm);
+  gap: var(--space-2);
+}
+
+/* ---- Canvas area --------------------------------------------------------- */
+
+.board-main {
+  height: calc(100vh - 64px);
+  background-color: #f5f7fa;
+  background-image: radial-gradient(circle, #c5cdd8 1px, transparent 1px);
+  background-size: 24px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fabric.js wraps canvas in a div; make sure it doesn't add scrollbars */
+.board-main .canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* ---- QR Modal ------------------------------------------------------------ */
+
+.modal-qr {
+  max-width: 460px;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.modal-qr .modal-title {
+  margin-bottom: var(--space-4);
+}
+
+.qr-expiry-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+
+.qr-expiry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  font: 400 var(--text-sm)/1 var(--font-body);
+  color: var(--text-secondary);
+}
+.qr-expiry-badge strong {
+  color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* QR frame with corner brackets */
+.qr-frame {
+  position: relative;
+  display: inline-block;
+  padding: 20px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-5);
+}
+
+.qr-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: var(--primary-teal);
+  border-style: solid;
+  border-radius: 2px;
+}
+.qr-tl { top: 8px; left: 8px;  border-width: 3px 0 0 3px; border-radius: 3px 0 0 0; }
+.qr-tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-radius: 0 3px 0 0; }
+.qr-bl { bottom: 8px; left: 8px;  border-width: 0 0 3px 3px; border-radius: 0 0 0 3px; }
+.qr-br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-radius: 0 0 3px 0; }
+
+.qr-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  min-height: 220px;
+}
+
+.qr-hint {
+  font: 400 var(--text-sm)/1.6 var(--font-body);
+  color: var(--text-tertiary);
+  max-width: 300px;
+  margin: 0 auto var(--space-2);
+}
+
+/* ---- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .board-toolbar { gap: 2px; padding: 4px 6px; }
+  .board-tool-btn { width: 32px; height: 32px; }
+  .board-size-btn { width: 28px; height: 28px; }
+  .board-save-btn span { display: none; }
+}
+
+@media (max-width: 600px) {
+  .board-header { padding: 0 var(--space-3); gap: var(--space-2); }
+  .board-wordmark { display: none; }
+}

@@ -1,0 +1,151 @@
+/* ============================================================================
+   Smart Go — Base styles
+   Drop this in at: public/shared/css/base.css
+   Loaded after reset.css and variables.css.
+   ============================================================================ */
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  min-height: 100vh;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); font-weight: 600; }
+h4 { font-size: var(--text-xl);  font-weight: 600; }
+h5 { font-size: var(--text-lg);  font-weight: 600; }
+h6 { font-size: var(--text-base); font-weight: 600; }
+
+p { color: var(--text-secondary); }
+small, .text-muted { color: var(--text-tertiary); font-size: var(--text-sm); }
+strong, b { font-weight: 600; color: var(--text-primary); }
+
+/* Links (default — components.css has more variants) */
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--duration-2) var(--ease);
+}
+a:hover {
+  color: var(--text-link-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(30, 144, 255, 0.2);
+  color: var(--text-primary);
+}
+
+/* Focus — never remove, only restyle */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Container helpers */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+.container-narrow {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* Stack utilities (use sparingly — components own their layout) */
+.stack-2 > * + * { margin-top: var(--space-2); }
+.stack-4 > * + * { margin-top: var(--space-4); }
+.stack-6 > * + * { margin-top: var(--space-6); }
+.stack-8 > * + * { margin-top: var(--space-8); }
+
+.row { display: flex; align-items: center; gap: var(--space-4); }
+.row-end { justify-content: flex-end; }
+.row-between { justify-content: space-between; }
+
+/* Brand wordmark — use for the logo text "Smart Go" */
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  letter-spacing: -0.02em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Loader (top progress bar — use during page transitions / async work) */
+.loader-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  transform-origin: left;
+  animation: loader-slide 1200ms var(--ease) infinite;
+  z-index: var(--z-tooltip);
+}
+@keyframes loader-slide {
+  0%   { transform: scaleX(0);   opacity: 1; }
+  60%  { transform: scaleX(1);   opacity: 1; }
+  100% { transform: scaleX(1);   opacity: 0; }
+}
+
+/* Toast container */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-2);
+  z-index: var(--z-toast);
+}
+.toast {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--primary-blue);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  min-width: 240px;
+  animation: toast-in var(--duration-3) var(--ease);
+}
+.toast-success { border-left-color: var(--success); }
+.toast-warning { border-left-color: var(--warning); }
+.toast-error   { border-left-color: var(--error); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide visually but keep for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}

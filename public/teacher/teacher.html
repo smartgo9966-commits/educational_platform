@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Go — Teacher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/css/reset.css">
+  <link rel="stylesheet" href="../shared/css/variables.css">
+  <link rel="stylesheet" href="../shared/css/base.css">
+  <link rel="stylesheet" href="../shared/css/components.css">
+  <link rel="stylesheet" href="./teacher.css">
+</head>
+<body>
+
+  <div class="loader-bar hidden" id="loader"></div>
+
+  <!-- ===== Teacher Header ===== -->
+  <header class="teacher-header">
+    <!-- Logo -->
+    <a href="/public/index.html" class="teacher-logo">
+      <div class="teacher-logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3L2 8l10 5 10-5-10-5zM2 16l10 5 10-5M2 12l10 5 10-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="teacher-logo-name">Smart Go</span>
+    </a>
+
+    <!-- Search -->
+    <div class="teacher-search-wrapper">
+      <svg class="teacher-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" class="teacher-search" id="search-input" placeholder="Search lessons, assignments...">
+    </div>
+
+    <!-- User info -->
+    <div class="teacher-user-info">
+      <button class="notif-btn" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="teacher-divider"></div>
+      <div class="teacher-profile">
+        <div class="teacher-profile-text">
+          <span class="teacher-profile-name" id="user-display-name">Teacher</span>
+          <span class="teacher-profile-sub" id="user-classroom">—</span>
+        </div>
+        <div class="teacher-avatar" id="user-avatar">T</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="signout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <!-- ===== Page body ===== -->
+  <div class="teacher-body">
+
+    <!-- Hero card -->
+    <section class="teacher-hero">
+      <div class="teacher-hero-text">
+        <h1 class="teacher-hero-title">Upload lessons or capture from the Smart Board</h1>
+        <p class="teacher-hero-sub">All your teaching materials in one place, organized for clarity and speed.</p>
+      </div>
+      <div class="teacher-hero-actions">
+        <button class="btn btn-primary btn-lg" id="upload-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Upload File
+        </button>
+        <button class="btn btn-secondary btn-lg" id="scan-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3v3M21 13v.01M16 21v.01M16 16h.01M13 13h8"/></svg>
+          Scan QR Code
+        </button>
+      </div>
+    </section>
+
+    <!-- Filter pills -->
+    <div class="filter-pills" role="group" aria-label="Filter by category">
+      <button class="filter-pill active" data-cat="all">All</button>
+      <button class="filter-pill" data-cat="assignment">Assignments</button>
+      <button class="filter-pill" data-cat="lesson">Lessons</button>
+      <button class="filter-pill" data-cat="note">Notes</button>
+      <button class="filter-pill" data-cat="smartboard">Smart Board</button>
+    </div>
+
+    <!-- Files grid -->
+    <div class="files-grid" id="files-grid">
+      <div class="files-loading" id="files-loading">
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="teacher-empty hidden" id="empty-state">
+      <div class="teacher-empty-icon">📂</div>
+      <h3>No files yet</h3>
+      <p>Upload your first lesson or capture from the Smart Board.</p>
+    </div>
+
+  </div>
+
+  <!-- ===== Upload Modal ===== -->
+  <div class="modal-backdrop hidden" id="upload-modal">
+    <div class="modal modal-upload">
+      <h3 class="modal-title">Upload File</h3>
+
+      <!-- Drop zone -->
+      <div class="upload-zone" id="upload-zone">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--primary-blue);margin-bottom:var(--space-3)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p style="font-weight:600;color:var(--text-primary);margin-bottom:4px">Drop file here or <label for="file-input" class="link" style="cursor:pointer">browse</label></p>
+        <p class="text-muted">Images, PDF, documents — max 25 MB</p>
+        <input type="file" id="file-input" class="sr-only" accept="image/*,application/pdf,application/vnd.*,video/mp4,audio/mpeg,audio/mp3">
+      </div>
+
+      <!-- Selected file info -->
+      <div class="selected-file hidden" id="selected-file">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="selected-file-name"></span>
+        <span id="selected-file-size" class="text-muted"></span>
+      </div>
+
+      <!-- Upload progress -->
+      <div class="upload-progress hidden" id="upload-progress">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <span class="text-muted" id="progress-label">Uploading…</span>
+      </div>
+
+      <form id="upload-form" class="stack-4" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="upload-title">Title</label>
+          <input id="upload-title" class="input" type="text" placeholder="e.g. Advanced Calculus Ch. 4" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upload-category">Category</label>
+          <select id="upload-category" class="select" required>
+            <option value="">Select category…</option>
+            <option value="lesson">Lesson</option>
+            <option value="assignment">Assignment</option>
+            <option value="note">Note</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upload-classroom">Classroom</label>
+          <select id="upload-classroom" class="select">
+            <option value="">None</option>
+          </select>
+        </div>
+        <div id="upload-error" class="form-error hidden"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="upload-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="upload-submit" disabled>Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== QR Scanner Modal ===== -->
+  <div class="modal-backdrop hidden" id="scanner-modal">
+    <div class="modal">
+      <h3 class="modal-title">Scan Smart Board QR</h3>
+      <p class="text-muted" style="margin-bottom:var(--space-4)">Point your camera at the QR code displayed on the Smart Board.</p>
+
+      <div id="qr-reader" style="width:100%;border-radius:var(--radius-md);overflow:hidden;"></div>
+
+      <div id="scan-status" class="scan-status text-muted">Waiting for camera…</div>
+
+      <details style="margin-top:var(--space-4);">
+        <summary class="link" style="cursor:pointer;font-size:var(--text-sm)">Camera not working? Enter code manually</summary>
+        <div class="row" style="margin-top:var(--space-3);gap:var(--space-2)">
+          <input class="input" id="manual-code" placeholder="Paste session ID">
+          <button class="btn btn-secondary" id="manual-submit">Claim</button>
+        </div>
+      </details>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="scanner-close">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Delete Confirm Modal ===== -->
+  <div class="modal-backdrop hidden" id="delete-modal">
+    <div class="modal">
+      <h3 class="modal-title">Delete file?</h3>
+      <div class="modal-body">This will permanently remove the file and cannot be undone.</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="delete-cancel">Cancel</button>
+        <button class="btn btn-danger" id="delete-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script type="module" src="./teacher.js"></script>
+</body>
+</html>

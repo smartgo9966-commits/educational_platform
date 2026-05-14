@@ -1,0 +1,129 @@
+/* ============================================================================
+   Smart Go — Design Tokens
+   Drop this in at: public/shared/css/variables.css
+   Light theme. Use ONLY these tokens — never hardcode hex values elsewhere.
+   ============================================================================ */
+
+:root {
+  /* ---- Primary -------------------------------------------------------- */
+  --primary-blue:          #1E90FF;
+  --primary-blue-hover:    #1976D2;
+  --primary-blue-active:   #1565C0;
+  --primary-blue-soft:     #E3F2FD;
+
+  --primary-teal:          #00D1B2;
+  --primary-teal-hover:    #00B89F;
+  --primary-teal-active:   #00A085;
+  --primary-teal-soft:     #E0F7F4;
+
+  /* ---- Gradients ------------------------------------------------------ */
+  --gradient-primary:        linear-gradient(135deg, #1E90FF 0%, #00D1B2 100%);
+  --gradient-primary-hover:  linear-gradient(135deg, #1976D2 0%, #00B89F 100%);
+  --gradient-primary-active: linear-gradient(135deg, #1565C0 0%, #00A085 100%);
+  --gradient-soft:           linear-gradient(135deg, rgba(30, 144, 255, 0.08) 0%, rgba(0, 209, 178, 0.08) 100%);
+
+  /* ---- Backgrounds ---------------------------------------------------- */
+  --bg-app:        #F8FAFC;
+  --bg-surface:    #FFFFFF;
+  --bg-subtle:     #F1F5F9;
+  --bg-tint-blue:  #F0F7FF;
+  --bg-tint-teal:  #ECFDF7;
+  --bg-overlay:    rgba(11, 31, 58, 0.5);
+
+  /* ---- Text ----------------------------------------------------------- */
+  --text-primary:    #0B1F3A;
+  --text-secondary:  #344563;
+  --text-tertiary:   #64748B;
+  --text-disabled:   #94A3B8;
+  --text-on-brand:   #FFFFFF;
+  --text-link:       #1E90FF;
+  --text-link-hover: #1565C0;
+
+  /* ---- Borders -------------------------------------------------------- */
+  --border-subtle:   #F1F5F9;
+  --border-default:  #E2E8F0;
+  --border-strong:   #CBD5E1;
+  --border-focus:    #1E90FF;
+
+  /* ---- Status --------------------------------------------------------- */
+  --success:        #10B981;
+  --success-soft:   #ECFDF5;
+  --success-text:   #047857;
+  --warning:        #F59E0B;
+  --warning-soft:   #FFFBEB;
+  --warning-text:   #B45309;
+  --error:          #EF4444;
+  --error-soft:     #FEF2F2;
+  --error-text:     #B91C1C;
+  --info:           #1E90FF;
+  --info-soft:      #EFF6FF;
+
+  /* ---- Shadows -------------------------------------------------------- */
+  --shadow-xs:         0 1px 2px rgba(11, 31, 58, 0.04);
+  --shadow-sm:         0 1px 3px rgba(11, 31, 58, 0.06), 0 1px 2px rgba(11, 31, 58, 0.04);
+  --shadow-md:         0 4px 12px rgba(11, 31, 58, 0.06), 0 1px 3px rgba(11, 31, 58, 0.04);
+  --shadow-lg:         0 12px 24px rgba(11, 31, 58, 0.08), 0 4px 8px rgba(11, 31, 58, 0.04);
+  --shadow-glow-blue:  0 0 0 4px rgba(30, 144, 255, 0.12), 0 4px 16px rgba(30, 144, 255, 0.18);
+  --shadow-glow-teal:  0 0 0 4px rgba(0, 209, 178, 0.12), 0 4px 16px rgba(0, 209, 178, 0.18);
+  --shadow-glow-brand: 0 4px 20px rgba(30, 144, 255, 0.20), 0 4px 20px rgba(0, 209, 178, 0.18);
+
+  /* ---- Radius --------------------------------------------------------- */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-pill: 999px;
+
+  /* ---- Spacing -------------------------------------------------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---- Typography ----------------------------------------------------- */
+  --font-body:    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+  --text-4xl:  36px;
+
+  /* ---- Motion --------------------------------------------------------- */
+  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-1:  120ms;
+  --duration-2:  160ms;
+  --duration-3:  200ms;
+  --duration-4:  300ms;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --container-max:    1280px;
+  --container-narrow: 720px;
+  --sidebar-width:    260px;
+  --header-height:    64px;
+  --z-modal:          1000;
+  --z-toast:          1100;
+  --z-tooltip:        1200;
+}
+
+/* Reduced-motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration:  0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
