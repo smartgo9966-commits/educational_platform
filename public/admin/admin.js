@@ -36,6 +36,8 @@ const state = {
 };
 
 // ---- Init -----------------------------------------------------------------
+// Ensure all modals are hidden (safety guard against animation glitch)
+document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.add('hidden'));
 loadStats();
 loadClassrooms().finally(() => loadUsers(state.currentTab));
 loadActivityLog();
@@ -98,8 +100,10 @@ async function loadUsers(role) {
     state.page = 1;
     applySearch();
   } catch (err) {
+    const msg = err?.code || err?.message || String(err);
     document.getElementById('users-tbody').innerHTML =
-      `<tr><td colspan="6" class="table-loading" style="color:var(--error-text)">Failed to load users.</td></tr>`;
+      `<tr><td colspan="6" class="table-loading" style="color:var(--error-text)">Error: ${msg}</td></tr>`;
+    console.error('loadUsers failed:', err);
   }
 }
 
