@@ -500,21 +500,29 @@ function actionIcon(action) {
 }
 
 function actionText(log) {
-  const role = log.userRole ? `<span style="text-transform:capitalize">${esc(log.userRole)}</span>` : 'User';
+  // Prefer the userName we now record at write-time. Older entries don't have
+  // it — fall back to the role, then to a generic label.
+  const who = log.userName
+    ? `<strong>${esc(log.userName)}</strong>`
+    : (log.userRole
+        ? `<span style="text-transform:capitalize">${esc(log.userRole)}</span>`
+        : 'Someone');
   const labels = {
-    login:          `${role} logged in`,
-    logout:         `${role} logged out`,
-    upload:         `${role} uploaded a file`,
-    download:       `${role} downloaded a file`,
-    scan_qr:        `${role} scanned a QR code`,
-    freeze_user:    `Admin froze a user`,
-    unfreeze_user:  `Admin unfroze a user`,
-    delete_user:    `Admin deleted a user`,
-    edit_user:      `Admin edited a user`,
-    create_session: `Board created a session`,
-    claim_session:  `Teacher claimed a board session`,
+    login:          `${who} logged in`,
+    logout:         `${who} logged out`,
+    upload:         `${who} uploaded a file`,
+    download:       `${who} downloaded a file`,
+    delete_file:    `${who} deleted a file`,
+    scan_qr:        `${who} scanned a QR code`,
+    create_user:    `${who} created a user`,
+    edit_user:      `${who} edited a user`,
+    freeze_user:    `${who} froze a user`,
+    unfreeze_user:  `${who} unfroze a user`,
+    delete_user:    `${who} deleted a user`,
+    create_session: `${who} created a board session`,
+    claim_session:  `${who} claimed a board session`,
   };
-  return labels[log.action] || esc(log.action);
+  return labels[log.action] || `${who}: ${esc(log.action)}`;
 }
 
 // ---- Confirm modal helper -------------------------------------------------
