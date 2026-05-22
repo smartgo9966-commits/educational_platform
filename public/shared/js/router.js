@@ -1,4 +1,5 @@
-function getBase() {
+// Canonical base-path helper. Imported by auth.js too — don't duplicate.
+export function getBase() {
   const path = window.location.pathname;
   const knownDirs = ['/login/', '/admin/', '/teacher/', '/student/', '/board/'];
   for (const dir of knownDirs) {

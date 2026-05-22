@@ -1,20 +1,49 @@
 import {
   signInWithEmailAndPassword,
+  signInAnonymously,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 import { auth, db, ADMIN_EMAILS } from './firebase-config.js';
+import { getBase } from './router.js';
 
-function getBase() {
-  const path = window.location.pathname;
-  const knownDirs = ['/login/', '/admin/', '/teacher/', '/student/', '/board/'];
-  for (const dir of knownDirs) {
-    const idx = path.indexOf(dir);
-    if (idx !== -1) return path.slice(0, idx);
+// Dev bypass: when the site is opened on localhost / 127.0.0.1 / file://,
+// pages return a fake user instead of redirecting to login. Production
+// origins are never affected.
+function isLocalHost() {
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '' || h === '::1';
+}
+// Sign in anonymously so Firestore reads have a valid request.auth, then
+// wrap the anonymous user with a fake displayName/email for the requested role.
+// Role-gated Firestore reads will still be denied by rules (expected — this is
+// just so pages can render their UI without throwing on init).
+async function makeDevUser(role) {
+  let user = auth.currentUser;
+  if (!user) {
+    try {
+      const cred = await signInAnonymously(auth);
+      user = cred.user;
+    } catch {
+      // Anonymous auth disabled — fall back to a fully fake user. Most
+      // Firestore reads will fail, but requireRole itself will resolve.
+      return {
+        uid: 'dev-' + role,
+        email: 'dev-' + role + '@local',
+        displayName: 'Dev ' + role.charAt(0).toUpperCase() + role.slice(1),
+        dev: true
+      };
+    }
   }
-  return path.replace(/\/index\.html$/, '').replace(/\/$/, '');
+  return {
+    uid: user.uid,
+    email: user.email || 'dev-' + role + '@local',
+    displayName: 'Dev ' + role.charAt(0).toUpperCase() + role.slice(1),
+    dev: true,
+    _firebaseUser: user
+  };
 }
 
 export async function signIn(email, password) {
@@ -41,6 +70,7 @@ export async function requireRole(requiredRole) {
       unsub();
       const base = getBase();
       if (!user) {
+        if (isLocalHost()) { resolve(await makeDevUser(requiredRole)); return; }
         window.location.href = base + '/login/login.html';
         return;
       }
@@ -54,12 +84,14 @@ export async function requireRole(requiredRole) {
         // Read role from Firestore (no JWT custom claim required)
         const userSnap = await getDoc(doc(db, 'users', user.uid));
         if (!userSnap.exists()) {
+          if (isLocalHost()) { resolve(await makeDevUser(requiredRole)); return; }
           window.location.href = base + '/login/login.html';
           return;
         }
         const userData = userSnap.data();
 
         if (userData.role !== requiredRole) {
+          if (isLocalHost()) { resolve(await makeDevUser(requiredRole)); return; }
           window.location.href = base + '/login/login.html';
           return;
         }

@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Smart Go</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Go — Dev Navigator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./shared/css/reset.css">
   <link rel="stylesheet" href="./shared/css/variables.css">
   <link rel="stylesheet" href="./shared/css/base.css">
+  <link rel="stylesheet" href="./shared/css/components.css">
   <style>
+    /* Splash (shown while we decide local-vs-prod) */
     .splash {
       min-height: 100vh;
       display: grid;
@@ -39,39 +42,242 @@
       margin: 24px auto 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Dev Navigator */
+    .nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-8);
+      border-bottom: 1px solid var(--border-default);
+      background: var(--bg-surface);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      text-decoration: none;
+    }
+    .nav-logo {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--gradient-primary);
+      display: grid; place-items: center;
+      box-shadow: var(--shadow-glow-brand);
+    }
+    .nav-wordmark {
+      font: 700 var(--text-xl)/1 var(--font-display);
+      letter-spacing: -0.02em;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .dev-badge {
+      margin-left: var(--space-3);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font: 600 var(--text-xs)/1 var(--font-body);
+      background: var(--primary-blue-soft);
+      color: var(--primary-blue-active);
+      border: 1px solid rgba(30, 144, 255, 0.2);
+    }
+    .nav-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+    .hero {
+      text-align: center;
+      padding: var(--space-16) var(--space-6) var(--space-8);
+    }
+    .hero h1 {
+      font-size: var(--text-4xl);
+      margin-bottom: var(--space-3);
+    }
+    .hero p { color: var(--text-tertiary); }
+    .hero p .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: var(--text-sm);
+    }
+
+    .pages-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 var(--space-6) var(--space-16);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-5);
+    }
+    .page-card {
+      display: block;
+      padding: var(--space-6);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: transform var(--duration-2) var(--ease),
+                  box-shadow var(--duration-2) var(--ease),
+                  border-color var(--duration-2) var(--ease);
+    }
+    .page-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary-blue);
+    }
+    .page-card-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-md);
+      display: grid; place-items: center;
+      margin-bottom: var(--space-4);
+      color: white;
+    }
+    .page-card-icon.admin   { background: linear-gradient(135deg, #1E90FF, #1565C0); }
+    .page-card-icon.board   { background: linear-gradient(135deg, #00D1B2, #00A085); }
+    .page-card-icon.teacher { background: linear-gradient(135deg, #F59E0B, #B45309); }
+    .page-card-icon.student { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+
+    .page-card-title {
+      font: 600 var(--text-lg)/1.2 var(--font-display);
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .page-card-desc { color: var(--text-tertiary); font-size: var(--text-sm); }
+    .page-card-path {
+      margin-top: var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="splash">
+
+  <!-- Splash: shown until we know whether to redirect or show the navigator -->
+  <div id="splash" class="splash">
     <div class="splash-inner">
       <div class="splash-title">Smart Go</div>
-      <div class="splash-sub">Redirecting…</div>
+      <div class="splash-sub">Loading…</div>
       <div class="loader"></div>
     </div>
   </div>
-  <script type="module">
-    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-    import { auth } from './shared/js/firebase-config.js';
-    import { redirectByRole } from './shared/js/router.js';
 
-    onAuthStateChanged(auth, async (user) => {
-      const base = window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
-      if (!user) {
-        window.location.href = base + '/login/login.html';
-        return;
-      }
-      try {
-        const token = await user.getIdTokenResult();
-        const role  = token.claims.role;
-        if (role) {
-          redirectByRole(role);
-        } else {
+  <!-- Dev Navigator (only shown on localhost / 127.0.0.1 / file://) -->
+  <div id="dev-nav" class="hidden">
+    <header class="nav-header">
+      <a href="./index.html" class="nav-brand">
+        <div class="nav-logo">
+          <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <span class="nav-wordmark">Smart Go</span>
+        <span class="dev-badge">Dev Navigator</span>
+      </a>
+      <div class="nav-actions">
+        <a class="btn btn-secondary btn-sm" href="./login/login.html">Login</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h1>All Pages</h1>
+      <p>
+        Open any page directly — auth is bypassed on <span class="pill">localhost</span>.
+        Use <strong>Login</strong> to sign in normally instead.
+      </p>
+    </section>
+
+    <div class="pages-grid">
+
+      <a class="page-card" href="./admin/admin.html">
+        <div class="page-card-icon admin">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+          </svg>
+        </div>
+        <div class="page-card-title">Admin</div>
+        <div class="page-card-desc">Manage users, classrooms, and activity.</div>
+        <div class="page-card-path">admin/admin.html</div>
+      </a>
+
+      <a class="page-card" href="./board/board.html">
+        <div class="page-card-icon board">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="14" rx="2"/>
+            <path d="M8 22h8M12 18v4"/>
+          </svg>
+        </div>
+        <div class="page-card-title">Smart Board</div>
+        <div class="page-card-desc">Digital whiteboard with QR capture.</div>
+        <div class="page-card-path">board/board.html</div>
+      </a>
+
+      <a class="page-card" href="./teacher/teacher.html">
+        <div class="page-card-icon teacher">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div class="page-card-title">Teacher</div>
+        <div class="page-card-desc">Files, uploads, classrooms.</div>
+        <div class="page-card-path">teacher/teacher.html</div>
+      </a>
+
+      <a class="page-card" href="./student/student.html">
+        <div class="page-card-icon student">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="page-card-title">Student</div>
+        <div class="page-card-desc">Browse files shared by your teachers.</div>
+        <div class="page-card-path">student/student.html</div>
+      </a>
+
+    </div>
+  </div>
+
+  <script type="module">
+    // Local hosts get the Dev Navigator; deployed hosts keep the original
+    // auth-redirect behavior so production users land on login or their role.
+    const h = window.location.hostname;
+    const isLocal = h === 'localhost' || h === '127.0.0.1' || h === '' || h === '::1';
+
+    if (isLocal) {
+      document.getElementById('splash').classList.add('hidden');
+      document.getElementById('dev-nav').classList.remove('hidden');
+    } else {
+      const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+      const { auth } = await import('./shared/js/firebase-config.js');
+      const { redirectByRole } = await import('./shared/js/router.js');
+
+      onAuthStateChanged(auth, async (user) => {
+        const base = window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+        if (!user) {
+          window.location.href = base + '/login/login.html';
+          return;
+        }
+        try {
+          const token = await user.getIdTokenResult();
+          const role  = token.claims.role;
+          if (role) {
+            redirectByRole(role);
+          } else {
+            window.location.href = base + '/login/login.html';
+          }
+        } catch {
           window.location.href = base + '/login/login.html';
         }
-      } catch {
-        window.location.href = base + '/login/login.html';
-      }
-    });
+      });
+    }
   </script>
 </body>
 </html>
