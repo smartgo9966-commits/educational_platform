@@ -1,12 +1,11 @@
 import {
-  collection, getDocs, getCountFromServer,
+  collection, doc, getDocs, getCountFromServer, setDoc,
   query, where, orderBy, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-functions.js';
 import { requireRole } from '../shared/js/auth.js';
 import { signOut } from '../shared/js/auth.js';
-import { db, functions } from '../shared/js/firebase-config.js';
+import { db, FIREBASE_API_KEY } from '../shared/js/firebase-config.js';
 import { toast, formatDateTime } from '../shared/js/ui.js';
 import { logActivity } from '../shared/js/activity.js';
 import { updateUser, freezeUser, deleteUser as dbDeleteUser } from '../shared/js/db.js';
@@ -407,14 +406,21 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
   errEl.classList.add('hidden');
 
   try {
-    // Server-side creation via Cloud Function — admin-verified, uses Admin SDK,
-    // doesn't sign out the current admin session.
-    await createUserFn({
+    // Spark (free) plan: no Cloud Functions, so we use the public Identity
+    // Toolkit REST endpoint to create the Auth user without signing out the
+    // current admin. Security note: the web API key is public, so anyone can
+    // call signUp directly. Firestore rules still prevent non-admins from
+    // writing the users/{uid} doc with a role — without an admin promoting
+    // them, a self-created Auth user has no app access.
+    const uid = await createAuthUser(email, password, name);
+    await setDoc(doc(db, 'users', uid), {
       email,
-      password,
       displayName:  name,
       role,
+      frozen:       false,
       classroomIds: classroom ? [classroom] : [],
+      createdAt:    serverTimestamp(),
+      updatedAt:    serverTimestamp(),
     });
 
     toast(`User ${name} created successfully.`, 'success');
@@ -423,22 +429,32 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
     loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
     loadStats();
   } catch (err) {
-    errEl.textContent = friendlyCreateUserError(err);
+    errEl.textContent = err.message || 'Failed to create user.';
     errEl.classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
   }
 });
 
-const createUserFn = httpsCallable(functions, 'createUser');
-
-function friendlyCreateUserError(err) {
-  const msg = err?.message || '';
-  if (/already exists/i.test(msg) || err?.code === 'already-exists') return 'An account with this email already exists.';
-  if (/invalid.*email/i.test(msg)) return 'Invalid email address.';
-  if (/password/i.test(msg))       return 'Password is too weak (min 6 characters).';
-  if (err?.code === 'permission-denied') return 'You do not have permission to create users.';
-  return msg || 'Failed to create user.';
+async function createAuthUser(email, password, displayName) {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password, displayName, returnSecureToken: false })
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    const msgs = {
+      EMAIL_EXISTS:    'An account with this email already exists.',
+      WEAK_PASSWORD:   'Password is too weak (min 6 characters).',
+      INVALID_EMAIL:   'Invalid email address.',
+    };
+    throw new Error(msgs[data.error?.message] || data.error?.message || 'Failed to create user');
+  }
+  return data.localId;
 }
 
 // ---- Activity log ---------------------------------------------------------

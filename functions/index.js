@@ -1,3 +1,9 @@
+// NOT DEPLOYED on the current Firebase Spark (free) plan — Cloud Functions
+// require Blaze. This file is kept ready for the day we upgrade. If/when
+// that happens, also add 'functions' to the deploy targets in
+// .github/workflows/deploy.yml and switch admin.js Add User from the
+// REST signup back to httpsCallable(functions, 'createUser').
+
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule }         = require('firebase-functions/v2/scheduler');
 const { initializeApp }      = require('firebase-admin/app');
