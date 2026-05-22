@@ -79,7 +79,7 @@
           <div class="stat-label">Active Teachers</div>
           <div class="stat-value" id="stat-teachers">—</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-clickable" id="stat-files-card" role="button" tabindex="0" aria-label="Open file list">
           <div class="stat-label">Files Uploaded</div>
           <div class="stat-value" id="stat-files">—</div>
         </div>
@@ -248,6 +248,27 @@
         <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
         <button class="btn btn-danger" id="confirm-ok">Confirm</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Files Browser Modal ===== -->
+  <div class="modal-backdrop hidden" id="files-modal">
+    <div class="modal modal-wide">
+      <div class="row row-between" style="margin-bottom: var(--space-4)">
+        <h3 class="modal-title" style="margin: 0">All Files</h3>
+        <button class="btn btn-ghost btn-sm" id="files-modal-close">Close</button>
+      </div>
+      <div class="files-controls">
+        <input id="files-search" class="input" type="search" placeholder="Search by title…">
+        <div class="filter-pills" id="files-cat-pills">
+          <button class="filter-pill active" data-cat="all" type="button">All</button>
+          <button class="filter-pill" data-cat="lesson" type="button">Lesson</button>
+          <button class="filter-pill" data-cat="assignment" type="button">Assignment</button>
+          <button class="filter-pill" data-cat="note" type="button">Note</button>
+          <button class="filter-pill" data-cat="smartboard" type="button">Smart Board</button>
+        </div>
+      </div>
+      <div id="files-list" class="files-list"></div>
     </div>
   </div>
 

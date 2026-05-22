@@ -35,6 +35,15 @@ const state = {
   unsubActivity: null
 };
 
+// Files browser modal state (opened from the Files Uploaded stat card).
+const filesBrowser = {
+  all: [],
+  filter: 'all',
+  search: '',
+  unsub: null,
+  namesCache: new Map(),
+};
+
 // ---- Init -----------------------------------------------------------------
 // Ensure all modals are hidden (safety guard against animation glitch)
 document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.add('hidden'));
@@ -586,6 +595,119 @@ function loadActivityLog() {
     </div>`).join('');
   });
 }
+
+// ---- Files browser modal --------------------------------------------------
+async function prefetchUploaderNames(files) {
+  const missing = [...new Set(
+    files.map(f => f.ownerId).filter(id => id && !filesBrowser.namesCache.has(id))
+  )];
+  await Promise.all(missing.map(async (uid) => {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      filesBrowser.namesCache.set(uid, snap.exists()
+        ? (snap.data().displayName || snap.data().email || null)
+        : null);
+    } catch {
+      filesBrowser.namesCache.set(uid, null);
+    }
+  }));
+}
+
+function catLabel(cat) {
+  return { lesson: 'Lesson', assignment: 'Assignment', note: 'Note', smartboard: 'Smart Board', other: 'Other' }[cat] || cat || 'Other';
+}
+
+function renderFilesList() {
+  const listEl = document.getElementById('files-list');
+  let rows = filesBrowser.all;
+  if (filesBrowser.filter !== 'all') {
+    rows = rows.filter(f => (f.category || 'other') === filesBrowser.filter);
+  }
+  if (filesBrowser.search) {
+    const t = filesBrowser.search.toLowerCase();
+    rows = rows.filter(f => (f.title || '').toLowerCase().includes(t));
+  }
+
+  if (rows.length === 0) {
+    const empty = filesBrowser.all.length === 0
+      ? 'No files yet.'
+      : 'No files match this filter.';
+    listEl.innerHTML = `<div class="files-empty">${empty}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = rows.map(f => {
+    const uploader = filesBrowser.namesCache.get(f.ownerId) || 'Deleted user';
+    const hasUrl   = !!f.downloadURL;
+    return `<div class="file-row" data-id="${esc(f.id)}" data-url="${esc(f.downloadURL || '')}" role="button" tabindex="0" aria-label="Open ${esc(f.title || 'file')}">
+      <div class="file-row-main">
+        <div class="file-row-title">${esc(f.title || 'Untitled')}</div>
+        <div class="file-row-meta">
+          <span class="file-cat-chip">${esc(catLabel(f.category))}</span>
+          <span>by ${esc(uploader)}</span>
+          ${hasUrl ? '' : '<span style="color:var(--error-text)">no link</span>'}
+        </div>
+      </div>
+      <div class="file-row-date">${formatDateTime(f.createdAt)}</div>
+    </div>`;
+  }).join('');
+}
+
+function openFilesModal() {
+  showModal('files-modal');
+  const q = query(collection(db, 'files'), orderBy('createdAt', 'desc'), limit(200));
+  filesBrowser.unsub = onSnapshot(q, async (snap) => {
+    filesBrowser.all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    await prefetchUploaderNames(filesBrowser.all);
+    renderFilesList();
+  }, (err) => {
+    console.warn('files snapshot failed:', err);
+    document.getElementById('files-list').innerHTML =
+      `<div class="files-empty" style="color:var(--error-text)">Failed to load files.</div>`;
+  });
+}
+
+function closeFilesModal() {
+  hideModal('files-modal');
+  filesBrowser.unsub?.();
+  filesBrowser.unsub = null;
+}
+
+document.getElementById('stat-files-card').addEventListener('click', openFilesModal);
+document.getElementById('stat-files-card').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFilesModal(); }
+});
+document.getElementById('files-modal-close').addEventListener('click', closeFilesModal);
+document.getElementById('files-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'files-modal') closeFilesModal();
+});
+
+document.getElementById('files-search').addEventListener('input', (e) => {
+  filesBrowser.search = e.target.value.trim();
+  renderFilesList();
+});
+
+document.getElementById('files-cat-pills').addEventListener('click', (e) => {
+  const pill = e.target.closest('[data-cat]');
+  if (!pill) return;
+  document.querySelectorAll('#files-cat-pills .filter-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  filesBrowser.filter = pill.dataset.cat;
+  renderFilesList();
+});
+
+document.getElementById('files-list').addEventListener('click', (e) => {
+  const row = e.target.closest('.file-row');
+  if (!row || !row.dataset.url) return;
+  window.open(row.dataset.url, '_blank', 'noopener');
+});
+document.getElementById('files-list').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const row = e.target.closest('.file-row');
+  if (!row || !row.dataset.url) return;
+  e.preventDefault();
+  window.open(row.dataset.url, '_blank', 'noopener');
+});
 
 function actionIcon(action) {
   const icons = {
