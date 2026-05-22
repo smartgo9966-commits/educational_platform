@@ -42,9 +42,11 @@ loadStats();
 loadClassrooms().finally(() => loadUsers(roleForTab(state.currentTab)));
 loadActivityLog();
 
-// Tab name ('students'/'teachers') maps to Firestore role ('student'/'teacher').
+// Tab name (plural) maps to Firestore role (singular).
 function roleForTab(tab) {
-  return tab === 'teachers' ? 'teacher' : 'student';
+  if (tab === 'teachers')   return 'teacher';
+  if (tab === 'classrooms') return 'classroom';
+  return 'student';
 }
 
 // ---- Stats ----------------------------------------------------------------
@@ -71,19 +73,23 @@ function fmtNumber(n) {
 }
 
 // ---- Classrooms -----------------------------------------------------------
+// Classrooms live in the users collection with role='classroom'.
+// state.classrooms is the single source of truth for the classroom dropdown
+// AND the classroom-name lookup in user rows.
 async function loadClassrooms() {
   try {
-    const snap = await getDocs(collection(db, 'classrooms'));
-    state.classrooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const q = query(collection(db, 'users'), where('role', '==', 'classroom'), limit(200));
+    const snap = await getDocs(q);
+    state.classrooms = snap.docs.map(d => ({ id: d.id, name: d.data().displayName || d.id }));
     populateClassroomSelects();
-  } catch {
-    // Classrooms optional — continue without them
+  } catch (err) {
+    console.warn('loadClassrooms failed:', err);
   }
 }
 
 function populateClassroomSelects() {
   const opts = state.classrooms.map(c =>
-    `<option value="${c.id}">${c.name}</option>`
+    `<option value="${esc(c.id)}">${esc(c.name)}</option>`
   ).join('');
   document.getElementById('new-classroom').innerHTML = '<option value="">None</option>' + opts;
   document.getElementById('edit-classroom').innerHTML = '<option value="">None</option>' + opts;
@@ -125,8 +131,16 @@ async function loadUsers(role) {
   try {
     const q = query(collection(db, 'users'), where('role', '==', role), limit(200));
     const snap = await getDocs(q);
-    state.allRows = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
+    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // When the user is viewing classrooms, the loaded rows ARE the
+    // classroom list — keep the dropdown source in sync.
+    if (role === 'classroom') {
+      state.classrooms = rows.map(c => ({ id: c.id, name: c.displayName || c.id }));
+      populateClassroomSelects();
+    }
+
+    state.allRows = rows
       .sort((a, b) => {
         const ta = a.createdAt?.toMillis?.() ?? ((a.createdAt?.seconds ?? 0) * 1000);
         const tb = b.createdAt?.toMillis?.() ?? ((b.createdAt?.seconds ?? 0) * 1000);
@@ -306,6 +320,7 @@ document.getElementById('users-tbody').addEventListener('click', async (e) => {
       toast(`User deleted.`, 'success');
       state.allRows = state.allRows.filter(u => u.id !== uid);
       applySearch();
+      if (user.role === 'classroom') loadClassrooms();
     },
     true
   );
@@ -399,6 +414,7 @@ document.getElementById('edit-user-form').addEventListener('submit', async (e) =
     toast('User updated.', 'success');
     hideModal('edit-user-modal');
     loadUsers(roleForTab(state.currentTab));
+    if (user.role === 'classroom' || newRole === 'classroom') loadClassrooms();
   } catch (err) {
     errEl.textContent = err.message || 'Failed to update user.';
     errEl.classList.remove('hidden');
@@ -490,6 +506,7 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
     hideModal('add-user-modal');
     loadUsers(roleForTab(state.currentTab));
     loadStats();
+    if (role === 'classroom') loadClassrooms();
   } catch (err) {
     errEl.textContent = err.message || 'Failed to create user.';
     errEl.classList.remove('hidden');
@@ -626,6 +643,8 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
       document.querySelector('[data-tab="students"]').click();
     } else if (section === 'teachers') {
       document.querySelector('[data-tab="teachers"]').click();
+    } else if (section === 'classrooms') {
+      document.querySelector('[data-tab="classrooms"]').click();
     } else if (section === 'dashboard') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (section === 'activity') {
