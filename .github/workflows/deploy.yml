@@ -28,5 +28,10 @@ jobs:
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> $GITHUB_ENV
 
-      - name: Deploy Hosting + Firestore rules + Storage rules
-        run: firebase deploy --only hosting,firestore:rules,firestore:indexes,storage --project educationalplatform-e744b --non-interactive
+      - name: Deploy Hosting + Firestore rules + indexes
+        # NOTE: 'storage' is intentionally NOT deployed. Firebase Storage was
+        # never initialized for this project, and we use Cloudinary for all
+        # uploads. To re-enable storage rule deploys: initialize Firebase
+        # Storage in the Firebase Console first, then add 'storage' back to
+        # the --only flag below.
+        run: firebase deploy --only hosting,firestore:rules,firestore:indexes --project educationalplatform-e744b --non-interactive
