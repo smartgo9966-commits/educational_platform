@@ -98,8 +98,22 @@ function syncClassroomVisibility(roleSelectId, groupId, classroomSelectId) {
   if (!show) document.getElementById(classroomSelectId).value = '';
 }
 
+// 'classroom' role is a Firestore-only entry (no Firebase Auth user), so the
+// email + password fields make no sense for it. Hide them and skip the
+// `required` attribute so the form can submit.
+function syncAuthFieldsVisibility() {
+  const role     = document.getElementById('new-role').value;
+  const isAuth   = role && role !== 'classroom';
+  const emailEl  = document.getElementById('new-email');
+  const passEl   = document.getElementById('new-password');
+  document.getElementById('new-email-group').classList.toggle('hidden', !isAuth);
+  document.getElementById('new-password-group').classList.toggle('hidden', !isAuth);
+  if (!isAuth) { emailEl.value = ''; passEl.value = ''; }
+}
+
 document.getElementById('new-role').addEventListener('change', () => {
   syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
+  syncAuthFieldsVisibility();
 });
 document.getElementById('edit-role').addEventListener('change', () => {
   syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
@@ -399,6 +413,7 @@ document.getElementById('add-user-btn').addEventListener('click', () => {
   document.getElementById('add-user-error').classList.add('hidden');
   populateClassroomSelects();
   syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
+  syncAuthFieldsVisibility();
   showModal('add-user-modal');
 });
 
@@ -413,15 +428,24 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
   const classroom = document.getElementById('new-classroom').value;
   const errEl     = document.getElementById('add-user-error');
 
-  if (!name || !email || !password || !role) {
-    errEl.textContent = 'All required fields must be filled.';
+  // Role-specific validation. Classroom entries are Firestore-only and have
+  // no Auth account, so they don't need email/password.
+  if (!name || !role) {
+    errEl.textContent = 'Name and role are required.';
     errEl.classList.remove('hidden');
     return;
   }
-  if (password.length < 8) {
-    errEl.textContent = 'Password must be at least 8 characters.';
-    errEl.classList.remove('hidden');
-    return;
+  if (role !== 'classroom') {
+    if (!email || !password) {
+      errEl.textContent = 'Email and password are required.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (password.length < 8) {
+      errEl.textContent = 'Password must be at least 8 characters.';
+      errEl.classList.remove('hidden');
+      return;
+    }
   }
 
   const submitBtn = document.getElementById('add-user-submit');
@@ -429,22 +453,37 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
   errEl.classList.add('hidden');
 
   try {
-    // Spark (free) plan: no Cloud Functions, so we use the public Identity
-    // Toolkit REST endpoint to create the Auth user without signing out the
-    // current admin. Security note: the web API key is public, so anyone can
-    // call signUp directly. Firestore rules still prevent non-admins from
-    // writing the users/{uid} doc with a role — without an admin promoting
-    // them, a self-created Auth user has no app access.
-    const uid = await createAuthUser(email, password, name);
-    await setDoc(doc(db, 'users', uid), {
-      email,
-      displayName:  name,
-      role,
-      frozen:       false,
-      classroomIds: classroom ? [classroom] : [],
-      createdAt:    serverTimestamp(),
-      updatedAt:    serverTimestamp(),
-    });
+    if (role === 'classroom') {
+      // No Firebase Auth user — generate a random Firestore doc ID and
+      // write directly. The entry shows up in admin lists but can't sign in.
+      const newDocRef = doc(collection(db, 'users'));
+      await setDoc(newDocRef, {
+        email:        '',
+        displayName:  name,
+        role:         'classroom',
+        frozen:       false,
+        classroomIds: [],
+        createdAt:    serverTimestamp(),
+        updatedAt:    serverTimestamp(),
+      });
+    } else {
+      // Spark (free) plan: no Cloud Functions, so we use the public Identity
+      // Toolkit REST endpoint to create the Auth user without signing out the
+      // current admin. Security note: the web API key is public, so anyone
+      // can call signUp directly. Firestore rules still prevent non-admins
+      // from writing the users/{uid} doc with a role — without an admin
+      // promoting them, a self-created Auth user has no app access.
+      const uid = await createAuthUser(email, password, name);
+      await setDoc(doc(db, 'users', uid), {
+        email,
+        displayName:  name,
+        role,
+        frozen:       false,
+        classroomIds: classroom ? [classroom] : [],
+        createdAt:    serverTimestamp(),
+        updatedAt:    serverTimestamp(),
+      });
+    }
 
     toast(`User ${name} created successfully.`, 'success');
     await logActivity('create_user');
