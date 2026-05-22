@@ -31,9 +31,11 @@ document.getElementById('user-display-name').textContent = userData.displayName 
 document.getElementById('user-avatar').textContent = (userData.displayName || 'T')[0].toUpperCase();
 
 if (userData.classroomIds?.length) {
-  const clSnap = await getDoc(doc(db, 'classrooms', userData.classroomIds[0]));
+  // Classrooms now live in the users collection with role='classroom'.
+  // (Old data path used a separate 'classrooms' collection.)
+  const clSnap = await getDoc(doc(db, 'users', userData.classroomIds[0]));
   if (clSnap.exists()) {
-    document.getElementById('user-classroom').textContent = clSnap.data().name || '—';
+    document.getElementById('user-classroom').textContent = clSnap.data().displayName || '—';
     appState.activeClassroomId = userData.classroomIds[0];
   }
 }
@@ -41,14 +43,24 @@ if (userData.classroomIds?.length) {
 document.getElementById('signout-btn').addEventListener('click', () => signOut());
 
 // ---- Load classrooms for upload form -------------------------------------
+// Classrooms live in the users collection with role='classroom' (admin
+// manages them from the Classrooms tab).
 async function loadClassrooms() {
-  const snap = await getDocs(collection(db, 'classrooms'));
-  appState.classrooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const sel  = document.getElementById('upload-classroom');
-  const opts = appState.classrooms.map(c =>
-    `<option value="${c.id}"${c.id === appState.activeClassroomId ? ' selected' : ''}>${c.name}</option>`
-  ).join('');
-  sel.innerHTML = '<option value="">None</option>' + opts;
+  try {
+    const q = query(collection(db, 'users'), where('role', '==', 'classroom'), limit(200));
+    const snap = await getDocs(q);
+    appState.classrooms = snap.docs.map(d => ({
+      id:   d.id,
+      name: d.data().displayName || d.id,
+    }));
+    const sel  = document.getElementById('upload-classroom');
+    const opts = appState.classrooms.map(c =>
+      `<option value="${esc(c.id)}"${c.id === appState.activeClassroomId ? ' selected' : ''}>${esc(c.name)}</option>`
+    ).join('');
+    sel.innerHTML = '<option value="">None</option>' + opts;
+  } catch (err) {
+    console.warn('loadClassrooms failed:', err);
+  }
 }
 loadClassrooms();
 
@@ -60,10 +72,27 @@ function subscribeFiles() {
     orderBy('createdAt', 'desc'),
     limit(100)
   );
-  appState.unsubFiles = onSnapshot(q, (snap) => {
-    appState.files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFiles();
-  });
+  appState.unsubFiles = onSnapshot(
+    q,
+    (snap) => {
+      appState.files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderFiles();
+    },
+    (err) => {
+      // Without this handler, a denied query (rules / missing index) would
+      // fail silently and the grid would stay empty forever.
+      console.error('files subscription failed:', err);
+      document.getElementById('files-loading')?.classList.add('hidden');
+      const grid = document.getElementById('files-grid');
+      if (grid) {
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:var(--space-6);color:var(--error-text);text-align:center">
+          Couldn't load your files: ${esc(err.code || err.message || 'unknown error')}.
+          Check the browser console.
+        </div>`;
+      }
+      toast(`Files load failed: ${err.code || err.message}`, 'error');
+    }
+  );
 }
 subscribeFiles();
 window.addEventListener('beforeunload', () => appState.unsubFiles?.());
