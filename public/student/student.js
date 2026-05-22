@@ -50,11 +50,19 @@ function subscribeFiles(ids) {
     orderBy('createdAt', 'desc'),
     limit(200)
   );
-  state.unsub = onSnapshot(q, async (snap) => {
-    state.files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    await prefetchTeacherNames(state.files);
-    renderFiles();
-  });
+  state.unsub = onSnapshot(
+    q,
+    async (snap) => {
+      state.files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      await prefetchTeacherNames(state.files);
+      renderFiles();
+    },
+    (err) => {
+      console.error('student files subscription failed:', err);
+      document.getElementById('files-loading')?.classList.add('hidden');
+      showEmpty(`Couldn't load files: ${err.code || err.message || 'unknown error'}. Check the browser console.`);
+    }
+  );
 }
 
 window.addEventListener('beforeunload', () => state.unsub?.());

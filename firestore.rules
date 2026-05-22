@@ -31,13 +31,14 @@ service cloud.firestore {
 
     // ---------- users ----------
     // Self-read is allowed directly (avoids recursive get() on own doc).
-    // Classroom-role entries are readable by anyone signed in so teachers
-    // can list them in the upload form's classroom dropdown and resolve
-    // classroom names. Only the displayName / role / id are exposed.
+    // Classroom-role and teacher-role entries are readable by anyone
+    // signed in: classrooms feed the teacher upload form's dropdown, and
+    // teacher names appear on file cards in the student dashboard
+    // ('by <teacher name>'). Student docs stay private (admin-only).
     match /users/{userId} {
       allow read:   if (isSignedIn() && uid() == userId) ||
                        isAdmin() ||
-                       (isSignedIn() && resource.data.role == 'classroom');
+                       (isSignedIn() && resource.data.role in ['classroom', 'teacher']);
       allow create: if isAdmin();
       allow update: if isAdmin() ||
                        (isSignedIn() && uid() == userId &&
