@@ -39,8 +39,13 @@ const state = {
 // Ensure all modals are hidden (safety guard against animation glitch)
 document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.add('hidden'));
 loadStats();
-loadClassrooms().finally(() => loadUsers(state.currentTab));
+loadClassrooms().finally(() => loadUsers(roleForTab(state.currentTab)));
 loadActivityLog();
+
+// Tab name ('students'/'teachers') maps to Firestore role ('student'/'teacher').
+function roleForTab(tab) {
+  return tab === 'teachers' ? 'teacher' : 'student';
+}
 
 // ---- Stats ----------------------------------------------------------------
 async function loadStats() {
@@ -206,7 +211,7 @@ document.querySelectorAll('.tab-pill').forEach(pill => {
     state.currentTab = pill.dataset.tab;
     state.searchTerm = '';
     document.getElementById('search-input').value = '';
-    loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
+    loadUsers(roleForTab(state.currentTab));
   });
 });
 
@@ -249,7 +254,7 @@ document.getElementById('users-tbody').addEventListener('click', async (e) => {
       await freezeUser(uid, true);
       await logActivity('freeze_user', uid);
       toast(`${user.displayName || user.email} frozen.`, 'warning');
-      loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
+      loadUsers(roleForTab(state.currentTab));
     }
   );
   if (action === 'unfreeze') return confirmAction(
@@ -259,7 +264,7 @@ document.getElementById('users-tbody').addEventListener('click', async (e) => {
       await freezeUser(uid, false);
       await logActivity('unfreeze_user', uid);
       toast(`${user.displayName || user.email} unfrozen.`, 'success');
-      loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
+      loadUsers(roleForTab(state.currentTab));
     }
   );
   if (action === 'delete') return confirmAction(
@@ -362,7 +367,7 @@ document.getElementById('edit-user-form').addEventListener('submit', async (e) =
     await logActivity('edit_user', user.id);
     toast('User updated.', 'success');
     hideModal('edit-user-modal');
-    loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
+    loadUsers(roleForTab(state.currentTab));
   } catch (err) {
     errEl.textContent = err.message || 'Failed to update user.';
     errEl.classList.remove('hidden');
@@ -426,7 +431,7 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
     toast(`User ${name} created successfully.`, 'success');
     await logActivity('create_user');
     hideModal('add-user-modal');
-    loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
+    loadUsers(roleForTab(state.currentTab));
     loadStats();
   } catch (err) {
     errEl.textContent = err.message || 'Failed to create user.';
