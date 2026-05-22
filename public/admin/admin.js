@@ -89,6 +89,22 @@ function populateClassroomSelects() {
   document.getElementById('edit-classroom').innerHTML = '<option value="">None</option>' + opts;
 }
 
+// Show the Classroom field only when the selected role is 'student'.
+function syncClassroomVisibility(roleSelectId, groupId, classroomSelectId) {
+  const role  = document.getElementById(roleSelectId).value;
+  const group = document.getElementById(groupId);
+  const show  = role === 'student';
+  group.classList.toggle('hidden', !show);
+  if (!show) document.getElementById(classroomSelectId).value = '';
+}
+
+document.getElementById('new-role').addEventListener('change', () => {
+  syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
+});
+document.getElementById('edit-role').addEventListener('change', () => {
+  syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
+});
+
 // ---- Users table ----------------------------------------------------------
 async function loadUsers(role) {
   showTableLoading();
@@ -335,6 +351,7 @@ async function openEditModal(user) {
   document.getElementById('edit-role').value = user.role || 'student';
   document.getElementById('edit-classroom').value = user.classroomIds?.[0] || '';
   document.getElementById('edit-user-error').classList.add('hidden');
+  syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
   showModal('edit-user-modal');
 }
 
@@ -381,6 +398,7 @@ document.getElementById('add-user-btn').addEventListener('click', () => {
   document.getElementById('add-user-form').reset();
   document.getElementById('add-user-error').classList.add('hidden');
   populateClassroomSelects();
+  syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
   showModal('add-user-modal');
 });
 
