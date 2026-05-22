@@ -1,0 +1,22 @@
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+ui-debug.log
+
+# Service account keys — NEVER commit
+functions/scripts/service-account-key.json
+*-service-account*.json
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
