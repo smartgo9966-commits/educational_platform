@@ -1,11 +1,12 @@
 import {
-  collection, doc, getDoc, getDocs, getCountFromServer, setDoc,
+  collection, getDocs, getCountFromServer,
   query, where, orderBy, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-functions.js';
 import { requireRole } from '../shared/js/auth.js';
 import { signOut } from '../shared/js/auth.js';
-import { db, FIREBASE_API_KEY } from '../shared/js/firebase-config.js';
+import { db, functions } from '../shared/js/firebase-config.js';
 import { toast, formatDateTime } from '../shared/js/ui.js';
 import { logActivity } from '../shared/js/activity.js';
 import { updateUser, freezeUser, deleteUser as dbDeleteUser } from '../shared/js/db.js';
@@ -55,8 +56,8 @@ async function loadStats() {
     document.getElementById('stat-teachers').textContent = fmtNumber(teachersSnap.data().count);
     document.getElementById('stat-files').textContent    = fmtNumber(filesSnap.data().count);
     document.getElementById('stat-sessions').textContent = fmtNumber(sessionsSnap.data().count);
-  } catch {
-    // Stats are informational — don't block the page on failure
+  } catch (err) {
+    console.warn('loadStats failed:', err);
   }
 }
 
@@ -93,8 +94,8 @@ async function loadUsers(role) {
     state.allRows = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => {
-        const ta = a.createdAt?.toMillis?.() ?? (a.createdAt?.seconds * 1000) ?? 0;
-        const tb = b.createdAt?.toMillis?.() ?? (b.createdAt?.seconds * 1000) ?? 0;
+        const ta = a.createdAt?.toMillis?.() ?? ((a.createdAt?.seconds ?? 0) * 1000);
+        const tb = b.createdAt?.toMillis?.() ?? ((b.createdAt?.seconds ?? 0) * 1000);
         return tb - ta;
       });
     state.page = 1;
@@ -406,18 +407,14 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
   errEl.classList.add('hidden');
 
   try {
-    // Create Firebase Auth user via REST API (doesn't sign out the current admin)
-    const uid = await createAuthUser(email, password, name);
-
-    // Write the Firestore user doc with the assigned role
-    await setDoc(doc(db, 'users', uid), {
+    // Server-side creation via Cloud Function — admin-verified, uses Admin SDK,
+    // doesn't sign out the current admin session.
+    await createUserFn({
       email,
+      password,
       displayName:  name,
       role,
-      frozen:       false,
       classroomIds: classroom ? [classroom] : [],
-      createdAt:    serverTimestamp(),
-      updatedAt:    serverTimestamp(),
     });
 
     toast(`User ${name} created successfully.`, 'success');
@@ -426,12 +423,23 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
     loadUsers(state.currentTab === 'students' ? 'student' : 'teacher');
     loadStats();
   } catch (err) {
-    errEl.textContent = err.message || 'Failed to create user.';
+    errEl.textContent = friendlyCreateUserError(err);
     errEl.classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
   }
 });
+
+const createUserFn = httpsCallable(functions, 'createUser');
+
+function friendlyCreateUserError(err) {
+  const msg = err?.message || '';
+  if (/already exists/i.test(msg) || err?.code === 'already-exists') return 'An account with this email already exists.';
+  if (/invalid.*email/i.test(msg)) return 'Invalid email address.';
+  if (/password/i.test(msg))       return 'Password is too weak (min 6 characters).';
+  if (err?.code === 'permission-denied') return 'You do not have permission to create users.';
+  return msg || 'Failed to create user.';
+}
 
 // ---- Activity log ---------------------------------------------------------
 function loadActivityLog() {
@@ -489,21 +497,23 @@ function actionText(log) {
 }
 
 // ---- Confirm modal helper -------------------------------------------------
+// Clone-and-replace the OK button each open so any stale listener from a
+// previously-cancelled invocation can't double-fire.
 function confirmAction(title, bodyHtml, onConfirm, isDanger = false) {
   document.getElementById('confirm-title').textContent = title;
   document.getElementById('confirm-body').innerHTML = bodyHtml;
-  const okBtn = document.getElementById('confirm-ok');
+  const oldBtn = document.getElementById('confirm-ok');
+  const okBtn  = oldBtn.cloneNode(true);
   okBtn.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+  oldBtn.replaceWith(okBtn);
   showModal('confirm-modal');
 
-  const handler = async () => {
+  okBtn.addEventListener('click', async () => {
     okBtn.disabled = true;
     try { await onConfirm(); } catch (err) { toast(err.message || 'Action failed.', 'error'); }
     okBtn.disabled = false;
     hideModal('confirm-modal');
-    okBtn.removeEventListener('click', handler);
-  };
-  okBtn.addEventListener('click', handler, { once: true });
+  }, { once: true });
 }
 
 document.getElementById('confirm-cancel').addEventListener('click', () => hideModal('confirm-modal'));
@@ -530,32 +540,13 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
       document.querySelector('[data-tab="students"]').click();
     } else if (section === 'teachers') {
       document.querySelector('[data-tab="teachers"]').click();
+    } else if (section === 'dashboard') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (section === 'activity') {
+      document.getElementById('activity-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
 });
-
-// ---- Create Firebase Auth user via REST API --------------------------------
-// Uses the public API key — does NOT sign out the current admin session.
-async function createAuthUser(email, password, displayName) {
-  const res = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
-    {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password, displayName, returnSecureToken: false })
-    }
-  );
-  const data = await res.json();
-  if (!res.ok) {
-    const msgs = {
-      EMAIL_EXISTS:    'An account with this email already exists.',
-      WEAK_PASSWORD:   'Password is too weak (min 6 characters).',
-      INVALID_EMAIL:   'Invalid email address.',
-    };
-    throw new Error(msgs[data.error?.message] || data.error?.message || 'Failed to create user');
-  }
-  return data.localId; // Firebase UID of the new user
-}
 
 // ---- Utilities ------------------------------------------------------------
 function esc(str) {
@@ -567,7 +558,13 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-// Cleanup on unload
-window.addEventListener('beforeunload', () => {
+// Cleanup on unload — pagehide fires reliably on Safari/back-forward cache;
+// beforeunload covers most other paths.
+let activityUnsubCalled = false;
+function teardownActivity() {
+  if (activityUnsubCalled) return;
+  activityUnsubCalled = true;
   state.unsubActivity?.();
-});
+}
+window.addEventListener('pagehide',     teardownActivity);
+window.addEventListener('beforeunload', teardownActivity);

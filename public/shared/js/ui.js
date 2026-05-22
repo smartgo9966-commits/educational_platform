@@ -17,10 +17,6 @@ export function toast(msg, type = 'info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-export function confirm(msg) {
-  return window.confirm(msg);
-}
-
 let loaderEl = null;
 
 export function showLoader() {

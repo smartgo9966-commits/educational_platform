@@ -66,11 +66,7 @@ async function run() {
 
   console.log(`✅  Found user: ${user.uid}`);
 
-  // Set custom claim
-  await auth.setCustomUserClaims(user.uid, { role });
-  console.log(`✅  Custom claim set: role = "${role}"`);
-
-  // Upsert Firestore users document
+  // Upsert Firestore users document. Role lives in this doc (no custom claims).
   await db.doc(`users/${user.uid}`).set({
     email:        user.email,
     displayName:  user.displayName || user.email.split('@')[0],
@@ -83,7 +79,7 @@ async function run() {
 
   console.log(`✅  Firestore users/${user.uid} updated`);
   console.log(`\n🎉  Done! ${email} is now a "${role}".`);
-  console.log('    The user must sign out and sign back in for the new role to take effect.\n');
+  console.log('    Takes effect on the user\'s next page load.\n');
 
   process.exit(0);
 }

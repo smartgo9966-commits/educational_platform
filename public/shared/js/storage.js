@@ -1,3 +1,6 @@
+// Cloudinary unsigned-upload model: CLOUD_NAME + UPLOAD_PRESET are public
+// by design. Real enforcement (allowed origins, max size, format whitelist)
+// is configured on the upload preset in the Cloudinary dashboard, NOT here.
 const CLOUD_NAME    = 'dt4amggpt';
 const UPLOAD_PRESET = 'bqkdglbm';
 const UPLOAD_URL    = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
@@ -43,6 +46,10 @@ export async function uploadBlob(blob, filename = 'snapshot.png') {
   return { downloadURL: data.secure_url, publicId: data.public_id };
 }
 
-// Cloudinary deletion requires a server-side signature — files stay on Cloudinary
-// but are removed from Firestore, so they disappear from the app.
+// KNOWN GAP: Cloudinary asset deletion requires the admin API secret, which
+// can't live in client code. When a file is "deleted" in the UI we only
+// remove the Firestore doc — the binary stays on Cloudinary indefinitely.
+// A future Cloud Function with the Cloudinary admin secret could implement
+// real deletion. Until then this is a no-op by design, not a bug.
+// See: https://cloudinary.com/documentation/admin_api#delete_resources
 export async function deleteFile(_publicId) {}

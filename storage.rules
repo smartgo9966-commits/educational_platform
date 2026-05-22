@@ -2,33 +2,39 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    function role() { return request.auth.token.role; }
+    // Role lives in the Firestore users/{uid} doc — no custom claims.
+    // Defense-in-depth: file uploads go to Cloudinary, but the avatars/
+    // path is real Firebase Storage and uses these rules.
+    function isSignedIn() { return request.auth != null; }
+    function role() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
 
     // Teacher uploads — limited to their own folder, max 25 MB, only docs/images/PDFs
     match /files/{teacherId}/{fileId}/{filename} {
-      allow read:   if request.auth != null;
-      allow create: if request.auth != null &&
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() &&
                        request.auth.uid == teacherId &&
                        role() == 'teacher' &&
                        request.resource.size < 25 * 1024 * 1024 &&
                        request.resource.contentType.matches('image/.*|application/pdf|application/vnd\\..*|video/mp4|audio/mpeg|audio/mp3');
-      allow delete: if request.auth != null &&
+      allow delete: if isSignedIn() &&
                        (request.auth.uid == teacherId || role() == 'admin');
     }
 
     // Smart-board snapshots — created by board users, claimed by teachers
     match /board_snapshots/{sessionId}.png {
-      allow read:   if request.auth != null && (role() == 'teacher' || role() == 'admin' || role() == 'board');
-      allow create: if request.auth != null && role() == 'board' &&
+      allow read:   if isSignedIn() && (role() == 'teacher' || role() == 'admin' || role() == 'board');
+      allow create: if isSignedIn() && role() == 'board' &&
                        request.resource.size < 10 * 1024 * 1024 &&
                        request.resource.contentType == 'image/png';
-      allow delete: if request.auth != null && role() == 'admin';
+      allow delete: if isSignedIn() && role() == 'admin';
     }
 
-    // Avatars
+    // Avatars — user can write their own
     match /avatars/{uid}.{ext} {
-      allow read:   if request.auth != null;
-      allow write:  if request.auth != null && request.auth.uid == uid &&
+      allow read:   if isSignedIn();
+      allow write:  if isSignedIn() && request.auth.uid == uid &&
                        request.resource.size < 2 * 1024 * 1024 &&
                        request.resource.contentType.matches('image/.*');
     }

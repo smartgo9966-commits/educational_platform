@@ -289,7 +289,8 @@ document.getElementById('scanner-close').addEventListener('click', closeScanner)
 async function closeScanner() {
   hideModal('scanner-modal');
   if (scanner) {
-    try { await scanner.stop(); await scanner.clear(); } catch {}
+    try { await scanner.stop(); await scanner.clear(); }
+    catch (err) { console.warn('Scanner cleanup failed:', err); }
     scanner = null;
   }
 }
@@ -305,7 +306,8 @@ async function onQRScanned(sessionId) {
       if (!snap.exists()) throw Object.assign(new Error('Session not found.'), { code: 'not-found' });
       const s = snap.data();
       if (s.claimed) throw Object.assign(new Error('Already claimed.'), { code: 'already-claimed' });
-      if (s.expiresAt.toMillis() < Date.now()) throw Object.assign(new Error('Expired.'), { code: 'expired' });
+      const expiresMs = s.expiresAt?.toMillis?.() ?? 0;
+      if (expiresMs < Date.now()) throw Object.assign(new Error('Expired.'), { code: 'expired' });
 
       tx.update(sessionRef, {
         claimed:   true,

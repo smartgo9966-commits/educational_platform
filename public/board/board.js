@@ -6,14 +6,18 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 import { auth, db } from '../shared/js/firebase-config.js';
 import { uploadBlob } from '../shared/js/storage.js';
+import { toast } from '../shared/js/ui.js';
 
 // ---- Anonymous sign-in (board requires no login) -------------------------
 let currentUser = null;
+let authError   = null;
 try {
   const cred = await signInAnonymously(auth);
   currentUser = cred.user;
 } catch (e) {
+  authError = e;
   console.warn('Board: anonymous sign-in unavailable –', e.message);
+  toast('Board cannot connect — Save & QR is disabled. Ask the admin to enable Anonymous sign-in in Firebase.', 'error');
 }
 
 // ---- Fabric canvas -------------------------------------------------------
@@ -39,6 +43,9 @@ let activeColor = '#0B1F3A';
 let activeSize  = 5;
 
 // ---- History (undo / redo) -----------------------------------------------
+// Cap history so a long lesson can't balloon memory. The bottom of the stack
+// is dropped once we exceed the cap (undo simply stops earlier than ideal).
+const MAX_HISTORY = 50;
 const history   = [JSON.stringify({ objects: [] })];
 const redoStack = [];
 let   pauseHist = false;
@@ -47,6 +54,7 @@ function pushHistory() {
   if (pauseHist) return;
   redoStack.length = 0;
   history.push(JSON.stringify(canvas.toJSON(['selectable', 'evented'])));
+  if (history.length > MAX_HISTORY) history.shift();
 }
 
 canvas.on('object:added',    pushHistory);
@@ -226,6 +234,10 @@ document.getElementById('action-clear').addEventListener('click', () => {
 let countdownTimer = null;
 
 document.getElementById('action-save-qr').addEventListener('click', async () => {
+  if (!currentUser) {
+    toast('Cannot save — board is not signed in. Reload the page or contact admin.', 'error');
+    return;
+  }
   const btn = document.getElementById('action-save-qr');
   btn.disabled    = true;
   btn.textContent = 'Saving…';
@@ -277,7 +289,7 @@ document.getElementById('action-save-qr').addEventListener('click', async () => 
 
   } catch (err) {
     console.error('Save & QR failed:', err);
-    alert(`Could not generate QR: ${err.message}`);
+    toast(`Could not generate QR: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = `
