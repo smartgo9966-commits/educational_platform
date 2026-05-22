@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDocs, getCountFromServer, setDoc,
+  collection, doc, getDoc, getDocs, getCountFromServer, setDoc,
   query, where, orderBy, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
@@ -537,26 +537,53 @@ async function createAuthUser(email, password, displayName) {
 }
 
 // ---- Activity log ---------------------------------------------------------
+// uid -> displayName cache for retroactively resolving names on old log
+// entries that were written before logActivity started storing userName.
+const activityNameCache = new Map();
+
+async function resolveLogNames(logs) {
+  const missing = [...new Set(
+    logs.filter(l => !l.userName && l.userId && !activityNameCache.has(l.userId))
+        .map(l => l.userId)
+  )];
+  if (missing.length === 0) return;
+  await Promise.all(missing.map(async (uid) => {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      activityNameCache.set(uid, snap.exists()
+        ? (snap.data().displayName || snap.data().email || null)
+        : null);
+    } catch {
+      activityNameCache.set(uid, null);
+    }
+  }));
+}
+
 function loadActivityLog() {
   const q = query(
     collection(db, 'activity_logs'),
     orderBy('timestamp', 'desc'),
     limit(20)
   );
-  state.unsubActivity = onSnapshot(q, (snap) => {
+  state.unsubActivity = onSnapshot(q, async (snap) => {
     const list = document.getElementById('activity-list');
     if (snap.empty) {
       list.innerHTML = '<p style="color:var(--text-tertiary);font-size:var(--text-sm)">No activity yet.</p>';
       return;
     }
-    list.innerHTML = snap.docs.map(d => {
-      const log = d.data();
-      return `<div class="activity-item">
-        <div class="activity-icon">${actionIcon(log.action)}</div>
-        <div class="activity-text">${actionText(log)}</div>
-        <div class="activity-time">${formatDateTime(log.timestamp)}</div>
-      </div>`;
-    }).join('');
+    const logs = snap.docs.map(d => d.data());
+    await resolveLogNames(logs);
+    // Inject the resolved name onto entries that didn't have one written.
+    for (const log of logs) {
+      if (!log.userName && log.userId && activityNameCache.get(log.userId)) {
+        log.userName = activityNameCache.get(log.userId);
+      }
+    }
+    list.innerHTML = logs.map(log => `<div class="activity-item">
+      <div class="activity-icon">${actionIcon(log.action)}</div>
+      <div class="activity-text">${actionText(log)}</div>
+      <div class="activity-time">${formatDateTime(log.timestamp)}</div>
+    </div>`).join('');
   });
 }
 
