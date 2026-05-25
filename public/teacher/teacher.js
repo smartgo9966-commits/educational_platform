@@ -129,7 +129,7 @@ function fileCard(f) {
     ? `<img src="${esc(f.downloadURL)}" alt="${esc(f.title)}" loading="lazy">`
     : `<div class="file-thumb-icon">${catIcon(cat)}</div>`;
 
-  return `<div class="file-card" data-id="${esc(f.id)}">
+  return `<div class="file-card" data-id="${esc(f.id)}" data-url="${esc(f.downloadURL || '')}" role="button" tabindex="0" aria-label="Open ${esc(f.title || 'file')} in a new tab" style="cursor:pointer">
     <div class="file-thumb">
       ${thumb}
       <div class="file-cat-badge">${catBadgeIcon(cat)}${catLabel(cat)}</div>
@@ -155,18 +155,37 @@ function fileCard(f) {
 
 // ---- File grid delegation ------------------------------------------------
 document.getElementById('files-grid').addEventListener('click', (e) => {
+  // Action buttons (Download / Delete) take precedence — handle them first.
   const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'download') {
-    const a = document.createElement('a');
-    a.href = btn.dataset.url; a.download = btn.dataset.name || 'file';
-    a.target = '_blank'; a.rel = 'noopener'; a.click();
-    logActivity('download', btn.dataset.url);
+  if (btn) {
+    if (btn.dataset.action === 'download') {
+      const a = document.createElement('a');
+      a.href = btn.dataset.url; a.download = btn.dataset.name || 'file';
+      a.target = '_blank'; a.rel = 'noopener'; a.click();
+      logActivity('download', btn.dataset.url);
+    }
+    if (btn.dataset.action === 'delete') {
+      appState.selectedFileId = btn.dataset.id;
+      showModal('delete-modal');
+    }
+    return;
   }
-  if (btn.dataset.action === 'delete') {
-    appState.selectedFileId = btn.dataset.id;
-    showModal('delete-modal');
-  }
+  // Card body click → open the file in a new tab.
+  const card = e.target.closest('.file-card');
+  if (!card || !card.dataset.url) return;
+  window.open(card.dataset.url, '_blank', 'noopener');
+  logActivity('open_file', card.dataset.id);
+});
+
+// Keyboard accessibility: Enter / Space on a focused card opens the file.
+document.getElementById('files-grid').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('[data-action]')) return;
+  const card = e.target.closest('.file-card');
+  if (!card || !card.dataset.url) return;
+  e.preventDefault();
+  window.open(card.dataset.url, '_blank', 'noopener');
+  logActivity('open_file', card.dataset.id);
 });
 
 // ---- Delete confirm -------------------------------------------------------
