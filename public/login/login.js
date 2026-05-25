@@ -139,9 +139,16 @@ forgotPw.addEventListener('click', async () => {
   }
   try {
     await sendPasswordResetEmail(auth, email);
-    showSuccess('Password reset email sent. Check your inbox.');
-  } catch {
-    showError('Could not send reset email. Check the address and try again.');
+    showSuccess(`Reset email sent to ${email}. Check your inbox AND spam folder.`);
+  } catch (err) {
+    console.error('sendPasswordResetEmail failed:', err);
+    const messages = {
+      'auth/user-not-found':    'No account exists for this email.',
+      'auth/invalid-email':     'Invalid email address.',
+      'auth/too-many-requests': 'Too many attempts — try again in a few minutes.',
+      'auth/missing-email':     'Please enter your email address.',
+    };
+    showError(messages[err.code] || `Couldn't send reset email: ${err.code || err.message}`);
   }
 });
 
