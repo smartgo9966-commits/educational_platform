@@ -3,8 +3,7 @@ import {
   query, where, orderBy, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
-import { requireRole } from '../shared/js/auth.js';
-import { signOut } from '../shared/js/auth.js';
+import { requireRole, signOut, resetPassword } from '../shared/js/auth.js';
 import { db, FIREBASE_API_KEY } from '../shared/js/firebase-config.js';
 import { toast, formatDateTime } from '../shared/js/ui.js';
 import { logActivity } from '../shared/js/activity.js';
@@ -407,10 +406,30 @@ async function openEditModal(user) {
   document.getElementById('edit-classroom').value = user.classroomIds?.[0] || '';
   document.getElementById('edit-user-error').classList.add('hidden');
   syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
+  // Password actions only make sense for users with a Firebase Auth account.
+  // Classroom-role entries are Firestore-only, so hide the controls.
+  const hasAuth = user.role !== 'classroom' && !!user.email;
+  document.getElementById('edit-password-group').classList.toggle('hidden', !hasAuth);
   showModal('edit-user-modal');
 }
 
 document.getElementById('edit-user-cancel').addEventListener('click', () => hideModal('edit-user-modal'));
+
+// ---- Password actions inside Edit User -----------------------------------
+document.getElementById('edit-send-reset').addEventListener('click', async () => {
+  const user = state.selectedUser;
+  if (!user?.email) return;
+  const btn = document.getElementById('edit-send-reset');
+  btn.disabled = true;
+  try {
+    await resetPassword(user.email);
+    toast(`Reset email sent to ${user.email}.`, 'success');
+  } catch (err) {
+    toast(`Couldn't send reset email: ${err.code || err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
   e.preventDefault();

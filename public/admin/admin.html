@@ -218,6 +218,17 @@
             <option value="">None</option>
           </select>
         </div>
+
+        <div class="form-group" id="edit-password-group">
+          <label class="form-label">Password</label>
+          <button type="button" class="btn btn-secondary btn-sm" id="edit-send-reset">
+            Send password reset email
+          </button>
+          <p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-2)">
+            Sends a reset link to the user's email. They click it and set their own new password.
+          </p>
+        </div>
+
         <div id="edit-user-error" class="form-error hidden"></div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="edit-user-cancel">Cancel</button>
