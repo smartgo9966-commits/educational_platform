@@ -322,14 +322,31 @@ document.getElementById('users-tbody').addEventListener('click', async (e) => {
   );
   if (action === 'delete') return confirmAction(
     'Delete user',
-    `Permanently delete <strong>${esc(user.displayName || user.email)}</strong>? This cannot be undone.`,
+    `Permanently delete <strong>${esc(user.displayName || user.email)}</strong>? This cannot be undone.<br><br>
+     <span style="font-size:var(--text-sm);color:var(--text-tertiary)">
+       Note: this removes the user from the app's database. Their Firebase Auth
+       account is separate — Firebase Console will open in a new tab so you can
+       delete it there too (only for non-classroom roles, since classroom entries
+       have no Auth account).
+     </span>`,
     async () => {
+      const hadAuthAccount = user.role !== 'classroom';
       await dbDeleteUser(uid);
       await logActivity('delete_user', uid);
       toast(`User deleted.`, 'success');
       state.allRows = state.allRows.filter(u => u.id !== uid);
       applySearch();
       if (user.role === 'classroom') loadClassrooms();
+
+      if (hadAuthAccount && user.email) {
+        // Copy email so the admin can paste-search in the Auth console.
+        try { await navigator.clipboard.writeText(user.email); } catch {}
+        window.open(
+          'https://console.firebase.google.com/project/educationalplatform-e744b/authentication/users',
+          '_blank', 'noopener'
+        );
+        toast(`Email copied to clipboard — paste to find & delete the Auth account.`, 'info');
+      }
     },
     true
   );
