@@ -238,6 +238,12 @@ document.getElementById('action-save-qr').addEventListener('click', async () => 
     toast('Cannot save — board is not signed in. Reload the page or contact admin.', 'error');
     return;
   }
+  // Fail fast if the QR library (loaded from CDN) never arrived — otherwise we'd
+  // upload a snapshot and create a session that could never display its QR.
+  if (typeof QRCode === 'undefined') {
+    toast('QR library failed to load — check your network/CDN, then reload the page.', 'error');
+    return;
+  }
   const btn = document.getElementById('action-save-qr');
   btn.disabled    = true;
   btn.textContent = 'Saving…';
@@ -256,20 +262,34 @@ document.getElementById('action-save-qr').addEventListener('click', async () => 
     const sessionRef = doc(collection(db, 'board_sessions'));
     const sessionId  = sessionRef.id;
 
-    const { downloadURL } = await uploadBlob(blob, `${sessionId}.png`);
+    let downloadURL;
+    try {
+      ({ downloadURL } = await uploadBlob(blob, `${sessionId}.png`));
+    } catch (err) {
+      console.error('Snapshot upload failed:', err);
+      toast(`Image upload failed: ${err.message}. Check the Cloudinary upload preset.`, 'error');
+      return;
+    }
 
     // 3. Create board session in Firestore (includes Cloudinary URL for teacher claim)
     const expiresAt = Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
-    await setDoc(sessionRef, {
-      boardId:     currentUser?.uid || 'anonymous',
-      storagePath: `cloudinary/${sessionId}`,
-      downloadURL,
-      createdAt:   serverTimestamp(),
-      expiresAt,
-      claimed:     false,
-      claimedBy:   null,
-      claimedAt:   null,
-    });
+    try {
+      await setDoc(sessionRef, {
+        boardId:     currentUser.uid,
+        storagePath: `cloudinary/${sessionId}`,
+        downloadURL,
+        createdAt:   serverTimestamp(),
+        expiresAt,
+        claimed:     false,
+        claimedBy:   null,
+        claimedAt:   null,
+      });
+    } catch (err) {
+      console.error('Session save failed:', err);
+      const code = err.code ? ` (${err.code})` : '';
+      toast(`Could not save session${code}: ${err.message}`, 'error');
+      return;
+    }
 
     // 4. Render QR encoding just the sessionId
     const qrTarget = document.getElementById('qr-target');
