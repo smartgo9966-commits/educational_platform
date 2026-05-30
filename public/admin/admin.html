@@ -322,6 +322,31 @@
     </div>
   </div>
 
+  <!-- ===== File Detail Modal ===== -->
+  <div class="modal-backdrop hidden" id="file-detail-modal">
+    <div class="modal">
+      <h3 class="modal-title" id="fd-title">File</h3>
+
+      <img id="fd-preview" alt="File preview">
+
+      <dl class="fd-details">
+        <div class="fd-row"><dt>Uploaded by</dt><dd id="fd-uploader">—</dd></div>
+        <div class="fd-row"><dt>Subject</dt><dd id="fd-subject">—</dd></div>
+        <div class="fd-row"><dt>Type</dt><dd id="fd-type">—</dd></div>
+        <div class="fd-row"><dt>Classroom</dt><dd id="fd-classroom">—</dd></div>
+        <div class="fd-row"><dt>Date</dt><dd id="fd-date">—</dd></div>
+      </dl>
+
+      <div class="modal-footer" style="justify-content: space-between">
+        <button type="button" class="btn btn-danger" id="fd-delete">Delete file</button>
+        <div class="row" style="gap: var(--space-3)">
+          <button type="button" class="btn btn-secondary" id="fd-close">Close</button>
+          <a class="btn btn-primary" id="fd-open" href="#" target="_blank" rel="noopener">Open file</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./admin.js"></script>
 </body>
 </html>

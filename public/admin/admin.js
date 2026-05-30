@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDoc, getDocs, getCountFromServer, setDoc,
+  collection, doc, getDoc, getDocs, getCountFromServer, setDoc, deleteDoc,
   query, where, orderBy, limit, onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
@@ -40,7 +40,8 @@ const filesBrowser = {
   filter: 'all',
   search: '',
   unsub: null,
-  namesCache: new Map(),
+  namesCache: new Map(),   // uid → { name, subject }
+  selected: null,          // file shown in the detail modal
 };
 
 // ---- Init -----------------------------------------------------------------
@@ -659,11 +660,13 @@ async function prefetchUploaderNames(files) {
   await Promise.all(missing.map(async (uid) => {
     try {
       const snap = await getDoc(doc(db, 'users', uid));
-      filesBrowser.namesCache.set(uid, snap.exists()
-        ? (snap.data().displayName || snap.data().email || null)
-        : null);
+      const d = snap.exists() ? snap.data() : {};
+      filesBrowser.namesCache.set(uid, {
+        name:    d.displayName || d.email || null,
+        subject: d.subject || ''
+      });
     } catch {
-      filesBrowser.namesCache.set(uid, null);
+      filesBrowser.namesCache.set(uid, { name: null, subject: '' });
     }
   }));
 }
@@ -692,7 +695,7 @@ function renderFilesList() {
   }
 
   listEl.innerHTML = rows.map(f => {
-    const uploader = filesBrowser.namesCache.get(f.ownerId) || 'Deleted user';
+    const uploader = filesBrowser.namesCache.get(f.ownerId)?.name || 'Deleted user';
     const hasUrl   = !!f.downloadURL;
     return `<div class="file-row" data-id="${esc(f.id)}" data-url="${esc(f.downloadURL || '')}" role="button" tabindex="0" aria-label="Open ${esc(f.title || 'file')}">
       <div class="file-row-main">
@@ -753,15 +756,77 @@ document.getElementById('files-cat-pills').addEventListener('click', (e) => {
 
 document.getElementById('files-list').addEventListener('click', (e) => {
   const row = e.target.closest('.file-row');
-  if (!row || !row.dataset.url) return;
-  window.open(row.dataset.url, '_blank', 'noopener');
+  if (!row) return;
+  const file = filesBrowser.all.find(f => f.id === row.dataset.id);
+  if (file) openFileDetail(file);
 });
 document.getElementById('files-list').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const row = e.target.closest('.file-row');
-  if (!row || !row.dataset.url) return;
+  if (!row) return;
   e.preventDefault();
-  window.open(row.dataset.url, '_blank', 'noopener');
+  const file = filesBrowser.all.find(f => f.id === row.dataset.id);
+  if (file) openFileDetail(file);
+});
+
+// ---- File detail modal (open / delete) -----------------------------------
+function openFileDetail(file) {
+  filesBrowser.selected = file;
+  const info = filesBrowser.namesCache.get(file.ownerId) || {};
+
+  document.getElementById('fd-title').textContent = file.title || 'Untitled';
+
+  const preview = document.getElementById('fd-preview');
+  if (file.mimeType?.startsWith('image/') && file.downloadURL) {
+    preview.src = file.downloadURL;
+    preview.style.display = '';
+  } else {
+    preview.removeAttribute('src');
+    preview.style.display = 'none';
+  }
+
+  document.getElementById('fd-uploader').textContent  = info.name || 'Deleted user';
+  document.getElementById('fd-subject').textContent   = info.subject || '—';
+  document.getElementById('fd-type').textContent      = catLabel(file.category);
+  document.getElementById('fd-classroom').textContent = getClassroomName(file.classroomId);
+  document.getElementById('fd-date').textContent      = formatDateTime(file.createdAt);
+
+  const openBtn = document.getElementById('fd-open');
+  if (file.downloadURL) {
+    openBtn.href = file.downloadURL;
+    openBtn.classList.remove('hidden');
+    openBtn.onclick = () => closeFileDetail();
+  } else {
+    openBtn.classList.add('hidden');
+  }
+
+  showModal('file-detail-modal');
+}
+
+function closeFileDetail() { hideModal('file-detail-modal'); }
+
+document.getElementById('fd-close').addEventListener('click', closeFileDetail);
+document.getElementById('file-detail-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'file-detail-modal') closeFileDetail();
+});
+
+document.getElementById('fd-delete').addEventListener('click', () => {
+  const file = filesBrowser.selected;
+  if (!file) return;
+  // Close the detail modal first so the confirm dialog isn't stacked behind it.
+  closeFileDetail();
+  confirmAction(
+    'Delete file',
+    `Permanently delete <strong>${esc(file.title || 'Untitled')}</strong>? This removes it from
+     everyone's library and cannot be undone.`,
+    async () => {
+      await deleteDoc(doc(db, 'files', file.id));
+      await logActivity('delete_file', file.id);
+      toast('File deleted.', 'success');
+      // The files list updates automatically via its onSnapshot listener.
+    },
+    true
+  );
 });
 
 function actionIcon(action) {
