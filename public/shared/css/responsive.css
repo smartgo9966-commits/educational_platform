@@ -17,6 +17,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Safety net: never let a stray wide element create horizontal scroll / a
+   sideways gap. `clip` (not `hidden`) keeps sticky headers working. */
+html, body { overflow-x: clip; max-width: 100%; }
+
 /* ============================================================================
    TOUCH SIZING — phones + big touch screens
    ============================================================================ */

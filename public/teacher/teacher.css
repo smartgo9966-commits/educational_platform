@@ -481,8 +481,15 @@
     align-items: flex-start;
     padding: var(--space-6);
   }
-  .teacher-hero-actions { width: 100%; }
-  .teacher-search-wrapper { max-width: 100%; flex: 1; }
+  /* Stack the hero buttons full-width so "Scan QR Code" can't overflow the card. */
+  .teacher-hero-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .teacher-hero-actions .btn { width: 100%; }
+  /* min-width:0 lets the search field shrink instead of widening the header. */
+  .teacher-search-wrapper { max-width: 100%; flex: 1; min-width: 0; }
   .files-grid { grid-template-columns: 1fr; }
 
   /* Cards go full-width here — cap the thumbnail so it doesn't dominate. */
