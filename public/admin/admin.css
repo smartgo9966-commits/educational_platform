@@ -482,10 +482,11 @@
     z-index: 20;
     transform: translateX(-100%);
     transition: transform var(--duration-3) var(--ease);
-    box-shadow: var(--shadow-lg);
     overflow-y: auto;
   }
-  .sidebar.open { transform: translateX(0); }
+  /* Shadow only while open — otherwise it bleeds past the off-screen drawer
+     and shows as a grey strip down the left edge. */
+  .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
 }
 
 @media (max-width: 600px) {
@@ -498,4 +499,8 @@
   .page-header { flex-wrap: wrap; gap: var(--space-3); }
   .page-title { font-size: var(--text-2xl); }
   .user-name { display: none; }   /* keep avatar + sign-out only */
+
+  /* Tabs: share the full width and shrink padding so "Classrooms" isn't cut off. */
+  .tab-switcher { width: 100%; }
+  .tab-pill { flex: 1; padding: 8px 6px; text-align: center; }
 }
