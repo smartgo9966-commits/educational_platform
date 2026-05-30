@@ -381,6 +381,11 @@
   color: var(--text-primary);
 }
 
+/* The confirmation dialog is opened on top of other modals (the All Files list,
+   the file-detail popup). All modal backdrops share --z-modal, so without this
+   the later-in-DOM modal would paint over the confirm box. Lift it above them. */
+#confirm-modal { z-index: calc(var(--z-modal) + 20); }
+
 .file-row {
   display: flex;
   align-items: center;
