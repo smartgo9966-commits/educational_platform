@@ -236,6 +236,23 @@ document.getElementById('action-clear').addEventListener('click', () => {
 // ---- Save & Generate QR --------------------------------------------------
 let countdownTimer = null;
 
+// Bounding box (canvas coordinates) enclosing every drawn object, or null if
+// the board is empty. Used to crop the export to the actual content so a
+// mostly-blank canvas doesn't produce an empty-looking capture.
+function contentBounds() {
+  const objs = canvas.getObjects();
+  if (!objs.length) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  objs.forEach((o) => {
+    const r = o.getBoundingRect(true, true);   // absolute coords
+    minX = Math.min(minX, r.left);
+    minY = Math.min(minY, r.top);
+    maxX = Math.max(maxX, r.left + r.width);
+    maxY = Math.max(maxY, r.top + r.height);
+  });
+  return { left: minX, top: minY, width: maxX - minX, height: maxY - minY };
+}
+
 document.getElementById('action-save-qr').addEventListener('click', async () => {
   if (!currentUser) {
     toast('Cannot save — board is not signed in. Reload the page or contact admin.', 'error');
@@ -252,10 +269,28 @@ document.getElementById('action-save-qr').addEventListener('click', async () => 
   btn.textContent = 'Saving…';
 
   try {
-    // 1. Export canvas to PNG with white background
+    // Nothing drawn → nothing to capture. Avoid creating a blank-looking file.
+    if (!canvas.getObjects().length) {
+      toast('The board is empty — draw or write something before saving.', 'error');
+      return;
+    }
+
+    // 1. Export canvas to PNG, white background, cropped to the drawn content
+    //    (+ padding) so the capture isn't dominated by empty canvas.
     canvas.backgroundColor = '#FFFFFF';
     canvas.renderAll();
-    const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
+
+    const b   = contentBounds();   // non-null: we just checked for objects
+    const pad = 40;
+    const left = Math.max(0, b.left - pad);
+    const top  = Math.max(0, b.top  - pad);
+    const dataURL = canvas.toDataURL({
+      format: 'png', quality: 1, multiplier: 2,
+      left, top,
+      width:  Math.min(canvas.getWidth(),  b.left + b.width  + pad) - left,
+      height: Math.min(canvas.getHeight(), b.top  + b.height + pad) - top,
+    });
+
     canvas.backgroundColor = null;
     canvas.renderAll();
 

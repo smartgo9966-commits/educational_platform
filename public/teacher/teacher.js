@@ -136,7 +136,7 @@ function fileCard(f) {
     : `<div class="file-thumb-icon">${catIcon(cat)}</div>`;
 
   return `<div class="file-card" data-id="${esc(f.id)}" data-url="${esc(f.downloadURL || '')}" role="button" tabindex="0" aria-label="Open ${esc(f.title || 'file')} in a new tab" style="cursor:pointer">
-    <div class="file-thumb">
+    <div class="file-thumb${cat === 'smartboard' ? ' file-thumb--contain' : ''}">
       ${thumb}
       <div class="file-cat-badge">${catBadgeIcon(cat)}${catLabel(cat)}</div>
     </div>
