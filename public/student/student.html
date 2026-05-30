@@ -68,6 +68,7 @@
       <button class="filter-pill" data-cat="assignment">Assignments</button>
       <button class="filter-pill" data-cat="lesson">Lessons</button>
       <button class="filter-pill" data-cat="note">Notes</button>
+      <button class="filter-pill" data-cat="smartboard">Smart Board</button>
       <button class="filter-pill" data-cat="other">Other</button>
     </div>
 
@@ -96,6 +97,35 @@
       <a href="#">Help Center</a>
     </nav>
   </footer>
+
+  <!-- ===== File Details Modal ===== -->
+  <div class="modal-backdrop hidden" id="file-modal">
+    <div class="modal modal-file">
+      <h3 class="modal-title" id="file-modal-title">File</h3>
+
+      <img id="file-modal-preview" alt="File preview">
+
+      <dl class="file-details">
+        <div class="file-detail-row">
+          <dt>Teacher</dt><dd id="file-modal-teacher">—</dd>
+        </div>
+        <div class="file-detail-row">
+          <dt>Subject</dt><dd id="file-modal-subject">—</dd>
+        </div>
+        <div class="file-detail-row">
+          <dt>Type</dt><dd id="file-modal-type">—</dd>
+        </div>
+        <div class="file-detail-row">
+          <dt>Date</dt><dd id="file-modal-date">—</dd>
+        </div>
+      </dl>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="file-modal-close">Close</button>
+        <a class="btn btn-primary" id="file-open" href="#" target="_blank" rel="noopener">Open file</a>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="./student.js"></script>
 </body>

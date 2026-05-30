@@ -112,6 +112,15 @@ function syncClassroomVisibility(roleSelectId, groupId, classroomSelectId) {
   if (!show) document.getElementById(classroomSelectId).value = '';
 }
 
+// Show the Subject field only when the selected role is 'teacher'.
+function syncSubjectVisibility(roleSelectId, groupId, subjectSelectId) {
+  const role  = document.getElementById(roleSelectId).value;
+  const group = document.getElementById(groupId);
+  const show  = role === 'teacher';
+  group.classList.toggle('hidden', !show);
+  if (!show) document.getElementById(subjectSelectId).value = '';
+}
+
 // 'classroom' role is a Firestore-only entry (no Firebase Auth user), so the
 // email + password fields make no sense for it. Hide them and skip the
 // `required` attribute so the form can submit.
@@ -127,10 +136,12 @@ function syncAuthFieldsVisibility() {
 
 document.getElementById('new-role').addEventListener('change', () => {
   syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
+  syncSubjectVisibility('new-role', 'new-subject-group', 'new-subject');
   syncAuthFieldsVisibility();
 });
 document.getElementById('edit-role').addEventListener('change', () => {
   syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
+  syncSubjectVisibility('edit-role', 'edit-subject-group', 'edit-subject');
 });
 
 // ---- Users table ----------------------------------------------------------
@@ -359,6 +370,7 @@ async function openViewModal(user) {
   body.innerHTML = `
     <div class="view-field"><div class="view-field-label">Email</div><div class="view-field-value">${esc(user.email || '—')}</div></div>
     <div class="view-field"><div class="view-field-label">Role</div><div class="view-field-value" style="text-transform:capitalize">${esc(user.role || '—')}</div></div>
+    ${user.role === 'teacher' ? `<div class="view-field"><div class="view-field-label">Subject</div><div class="view-field-value">${esc(user.subject || '—')}</div></div>` : ''}
     <div class="view-field"><div class="view-field-label">Classroom</div><div class="view-field-value">${esc(getClassroomName(user.classroomIds?.[0]))}</div></div>
     <div class="view-field"><div class="view-field-label">Status</div><div class="view-field-value">${user.frozen ? '<span class="badge badge-warning">Frozen</span>' : '<span class="badge badge-success">Active</span>'}</div></div>
     <div class="view-field"><div class="view-field-label">Created</div><div class="view-field-value">${formatDateTime(user.createdAt)}</div></div>
@@ -404,8 +416,10 @@ async function openEditModal(user) {
   document.getElementById('edit-email-display').value = user.email || '';
   document.getElementById('edit-role').value = user.role || 'student';
   document.getElementById('edit-classroom').value = user.classroomIds?.[0] || '';
+  document.getElementById('edit-subject').value = user.subject || '';
   document.getElementById('edit-user-error').classList.add('hidden');
   syncClassroomVisibility('edit-role', 'edit-classroom-group', 'edit-classroom');
+  syncSubjectVisibility('edit-role', 'edit-subject-group', 'edit-subject');
   // Password actions only make sense for users with a Firebase Auth account.
   // Classroom-role entries are Firestore-only, so hide the controls.
   const hasAuth = user.role !== 'classroom' && !!user.email;
@@ -439,6 +453,7 @@ document.getElementById('edit-user-form').addEventListener('submit', async (e) =
   const newName      = document.getElementById('edit-name').value.trim();
   const newRole      = document.getElementById('edit-role').value;
   const newClassroom = document.getElementById('edit-classroom').value;
+  const newSubject   = document.getElementById('edit-subject').value;
   const errEl        = document.getElementById('edit-user-error');
 
   if (!newName) { errEl.textContent = 'Name is required.'; errEl.classList.remove('hidden'); return; }
@@ -452,6 +467,7 @@ document.getElementById('edit-user-form').addEventListener('submit', async (e) =
       ...(newRole !== user.role ? { role: newRole } : {}),
       displayName: newName,
       classroomIds: newClassroom ? [newClassroom] : [],
+      subject: newRole === 'teacher' ? newSubject : '',
       updatedAt: serverTimestamp()
     });
 
@@ -474,6 +490,7 @@ document.getElementById('add-user-btn').addEventListener('click', () => {
   document.getElementById('add-user-error').classList.add('hidden');
   populateClassroomSelects();
   syncClassroomVisibility('new-role', 'classroom-group', 'new-classroom');
+  syncSubjectVisibility('new-role', 'new-subject-group', 'new-subject');
   syncAuthFieldsVisibility();
   showModal('add-user-modal');
 });
@@ -487,6 +504,7 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
   const password  = document.getElementById('new-password').value;
   const role      = document.getElementById('new-role').value;
   const classroom = document.getElementById('new-classroom').value;
+  const subject   = document.getElementById('new-subject').value;
   const errEl     = document.getElementById('add-user-error');
 
   // Role-specific validation. Classroom entries are Firestore-only and have
@@ -541,6 +559,7 @@ document.getElementById('add-user-form').addEventListener('submit', async (e) =>
         role,
         frozen:       false,
         classroomIds: classroom ? [classroom] : [],
+        subject:      role === 'teacher' ? subject : '',
         createdAt:    serverTimestamp(),
         updatedAt:    serverTimestamp(),
       });

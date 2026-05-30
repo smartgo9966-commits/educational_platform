@@ -5,6 +5,7 @@ import {
 import { requireRole, signOut } from '../shared/js/auth.js';
 import { db } from '../shared/js/firebase-config.js';
 import { logActivity } from '../shared/js/activity.js';
+import { formatDateTime } from '../shared/js/ui.js';
 
 // ---- Auth guard -----------------------------------------------------------
 const currentUser = await requireRole('student');
@@ -15,7 +16,7 @@ const state = {
   filter:      'all',
   searchTerm:  '',
   unsub:       null,
-  teacherNames: {}  // uid → displayName cache
+  teacherInfo: {}  // uid → { name, subject } cache
 };
 
 // ---- Header setup --------------------------------------------------------
@@ -54,7 +55,7 @@ function subscribeFiles(ids) {
     q,
     async (snap) => {
       state.files = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      await prefetchTeacherNames(state.files);
+      await prefetchTeacherInfo(state.files);
       renderFiles();
     },
     (err) => {
@@ -67,17 +68,19 @@ function subscribeFiles(ids) {
 
 window.addEventListener('beforeunload', () => state.unsub?.());
 
-// ---- Prefetch teacher display names (cached) ----------------------------
-async function prefetchTeacherNames(files) {
-  const unknownIds = [...new Set(files.map(f => f.ownerId).filter(id => id && !state.teacherNames[id]))];
+// ---- Prefetch teacher name + subject (cached) ---------------------------
+async function prefetchTeacherInfo(files) {
+  const unknownIds = [...new Set(files.map(f => f.ownerId).filter(id => id && !state.teacherInfo[id]))];
   await Promise.all(unknownIds.map(async (uid) => {
     try {
       const snap = await getDoc(doc(db, 'users', uid));
-      state.teacherNames[uid] = snap.exists()
-        ? (snap.data().displayName || snap.data().email || uid)
-        : uid;
+      const d = snap.exists() ? snap.data() : {};
+      state.teacherInfo[uid] = {
+        name:    d.displayName || d.email || uid,
+        subject: d.subject || ''
+      };
     } catch {
-      state.teacherNames[uid] = '—';
+      state.teacherInfo[uid] = { name: '—', subject: '' };
     }
   }));
 }
@@ -91,8 +94,9 @@ function renderFiles() {
 
   if (state.filter !== 'all') {
     if (state.filter === 'other') {
-      // "Other" bucket: captures anything that isn't a named category
-      filtered = filtered.filter(f => !['assignment','lesson','note'].includes(f.category));
+      // "Other" bucket: anything that isn't a named category (Smart Board has
+      // its own pill now, so exclude it here too).
+      filtered = filtered.filter(f => !['assignment','lesson','note','smartboard'].includes(f.category));
     } else {
       filtered = filtered.filter(f => f.category === state.filter);
     }
@@ -118,7 +122,7 @@ function renderFiles() {
 
 function fileCard(f) {
   const cat          = f.category || 'other';
-  const teacherName  = state.teacherNames[f.ownerId] || '—';
+  const teacherName  = state.teacherInfo[f.ownerId]?.name || '—';
   const isImage      = f.mimeType?.startsWith('image/') && f.downloadURL;
   const thumb        = isImage
     ? `<img src="${esc(f.downloadURL)}" alt="${esc(f.title)}" loading="lazy">`
@@ -134,23 +138,62 @@ function fileCard(f) {
   </div>`;
 }
 
-// ---- File card click → open / download ----------------------------------
+// ---- File card click → open details popup --------------------------------
 document.getElementById('files-grid').addEventListener('click', (e) => {
   const card = e.target.closest('.file-card');
-  if (!card || !card.dataset.url) return;
-  logActivity('download', card.dataset.id);
-  window.open(card.dataset.url, '_blank', 'noopener');
+  if (!card) return;
+  const file = state.files.find(f => f.id === card.dataset.id);
+  if (file) openFileModal(file);
 });
 
 document.getElementById('files-grid').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    const card = e.target.closest('.file-card');
-    if (card?.dataset.url) {
-      e.preventDefault();
-      logActivity('download', card.dataset.id);
-      window.open(card.dataset.url, '_blank', 'noopener');
-    }
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.file-card');
+  if (!card) return;
+  e.preventDefault();
+  const file = state.files.find(f => f.id === card.dataset.id);
+  if (file) openFileModal(file);
+});
+
+// ---- File details modal --------------------------------------------------
+function openFileModal(file) {
+  const info = state.teacherInfo[file.ownerId] || {};
+
+  document.getElementById('file-modal-title').textContent = file.title || 'Untitled';
+
+  const preview = document.getElementById('file-modal-preview');
+  if (file.mimeType?.startsWith('image/') && file.downloadURL) {
+    preview.src = file.downloadURL;
+    preview.style.display = '';
+  } else {
+    preview.removeAttribute('src');
+    preview.style.display = 'none';
   }
+
+  document.getElementById('file-modal-teacher').textContent = info.name || '—';
+  document.getElementById('file-modal-subject').textContent = info.subject || '—';
+  document.getElementById('file-modal-type').textContent    = catLabel(file.category || 'other');
+  document.getElementById('file-modal-date').textContent    = formatDateTime(file.createdAt);
+
+  const openBtn = document.getElementById('file-open');
+  if (file.downloadURL) {
+    openBtn.href = file.downloadURL;
+    openBtn.classList.remove('hidden');
+    openBtn.onclick = () => { logActivity('download', file.id); closeFileModal(); };
+  } else {
+    openBtn.classList.add('hidden');
+  }
+
+  document.getElementById('file-modal').classList.remove('hidden');
+}
+
+function closeFileModal() {
+  document.getElementById('file-modal').classList.add('hidden');
+}
+
+document.getElementById('file-modal-close').addEventListener('click', closeFileModal);
+document.getElementById('file-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'file-modal') closeFileModal();
 });
 
 // ---- Filter pills --------------------------------------------------------
