@@ -31,11 +31,14 @@ const canvas = new fabric.Canvas('board-canvas', {
 canvas.freeDrawingBrush.color = '#0B1F3A';
 canvas.freeDrawingBrush.width = 5;
 
-window.addEventListener('resize', () => {
+function fitCanvas() {
   canvas.setWidth(window.innerWidth);
   canvas.setHeight(window.innerHeight - 64);
   canvas.renderAll();
-});
+}
+window.addEventListener('resize', fitCanvas);
+// Phones/tablets fire orientationchange (and a late resize) on rotation.
+window.addEventListener('orientationchange', fitCanvas);
 
 // ---- Tool state ----------------------------------------------------------
 let activeTool  = 'pen';
@@ -317,7 +320,7 @@ document.getElementById('action-save-qr').addEventListener('click', async () => 
         <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
       </svg>
-      Save &amp; Generate QR`;
+      <span>Save &amp; Generate QR</span>`;
   }
 });
 

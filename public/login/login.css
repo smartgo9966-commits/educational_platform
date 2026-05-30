@@ -18,6 +18,9 @@
   max-width: 420px;
   padding: var(--space-10);
 }
+@media (max-width: 640px) {
+  .login-card { padding: var(--space-6); }
+}
 
 /* Brand section */
 .login-brand {

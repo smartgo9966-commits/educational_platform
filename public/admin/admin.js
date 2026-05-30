@@ -817,6 +817,26 @@ document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
   });
 });
 
+// ---- Mobile sidebar drawer ------------------------------------------------
+const sidebarEl       = document.querySelector('.sidebar');
+const sidebarToggle   = document.getElementById('sidebar-toggle');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+function openSidebar() {
+  sidebarEl.classList.add('open');
+  sidebarBackdrop.classList.remove('hidden');
+  sidebarToggle.setAttribute('aria-expanded', 'true');
+}
+function closeSidebar() {
+  sidebarEl.classList.remove('open');
+  sidebarBackdrop.classList.add('hidden');
+  sidebarToggle.setAttribute('aria-expanded', 'false');
+}
+sidebarToggle.addEventListener('click', () => {
+  sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+});
+sidebarBackdrop.addEventListener('click', closeSidebar);
+
 // ---- Sidebar navigation ---------------------------------------------------
 document.querySelectorAll('.sidebar-item').forEach(item => {
   item.addEventListener('click', (e) => {
@@ -835,6 +855,7 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
     } else if (section === 'activity') {
       document.getElementById('activity-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    closeSidebar();   // collapse the drawer after navigating (no-op on desktop)
   });
 });
 

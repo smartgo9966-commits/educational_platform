@@ -115,6 +115,19 @@
   --z-modal:          1000;
   --z-toast:          1100;
   --z-tooltip:        1200;
+
+  /* ---- Touch ---------------------------------------------------------- */
+  /* Minimum comfortable tap target (WCAG 2.5.5 / Apple HIG). Applied on
+     coarse pointers — see shared/css/responsive.css. */
+  --touch-target: 44px;
+
+  /* ---- Breakpoints (reference) ---------------------------------------- */
+  /* CSS can't use custom properties inside @media queries, so these are
+     documentation only — keep media-query literals in sync with them:
+       phone   ≤ 640px
+       tablet  ≤ 900px
+     Touch enhancements key off @media (pointer: coarse) so they apply to
+     both phones and large interactive touch displays. */
 }
 
 @media (prefers-reduced-motion: reduce) {

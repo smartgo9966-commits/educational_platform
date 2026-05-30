@@ -1,0 +1,118 @@
+/* ============================================================================
+   Smart Go — Touch & Responsive layer
+   Loaded LAST on every page (after page CSS) so it can override.
+
+   Strategy:
+   - Touch sizing keys off `@media (pointer: coarse)` → applies to BOTH phones
+     and large interactive touch displays, without affecting mouse/desktop.
+   - Layout reflow keys off width breakpoints (phone ≤ 640px, tablet ≤ 900px).
+   Never hardcode hex values — use the tokens from variables.css.
+   ============================================================================ */
+
+/* ---- Tap behavior (all pointers) ---------------------------------------- */
+/* Remove the 300ms tap delay and the grey flash on tap for interactive UI. */
+.btn, .btn-icon, .sidebar-item, .select, .input-action,
+.board-tool-btn, .board-size-btn, .tab-pill, a, button, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================================
+   TOUCH SIZING — phones + big touch screens
+   ============================================================================ */
+@media (pointer: coarse) {
+
+  /* Core controls reach the 44px comfortable tap target. */
+  .btn {
+    min-height: var(--touch-target);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .btn-sm {
+    min-height: 38px;            /* compact, but still tappable */
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .btn-lg { min-height: 52px; }
+
+  .btn-icon {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    padding: 10px;
+  }
+
+  .input,
+  .select {
+    min-height: var(--touch-target);
+    /* 16px font keeps iOS Safari from auto-zooming the page on focus. */
+    font-size: var(--text-base);
+  }
+
+  .input-wrapper .input-action {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    padding: 8px;
+    justify-content: center;
+  }
+
+  /* Nav + menu rows */
+  .sidebar-item { min-height: var(--touch-target); }
+
+  /* Board drawing tools — finger-sized (overrides board.css defaults). */
+  .board-tool-btn {
+    width: var(--touch-target);
+    height: var(--touch-target);
+  }
+  .board-size-btn {
+    min-width: 38px;
+    min-height: 38px;
+  }
+}
+
+/* ---- Neutralize sticky hover on touch-only devices ---------------------- */
+/* Hover transforms "stick" after a tap on touchscreens — disable them where
+   there is no real hover. :active still gives tactile feedback. */
+@media (hover: none) {
+  .card-interactive:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-default);
+  }
+}
+
+/* ============================================================================
+   MODALS — fit small screens
+   ============================================================================ */
+.modal {
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 640px) {
+  .modal { padding: var(--space-5); }
+  .modal-title { font-size: var(--text-xl); }
+}
+
+/* ============================================================================
+   TABLES — never force horizontal page scroll
+   Wrap tables in <div class="table-scroll"> where present; this also rescues
+   any bare .table by letting its own overflow scroll within reason.
+   ============================================================================ */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================================
+   SHARED HEADER — tighten on phones
+   ============================================================================ */
+@media (max-width: 640px) {
+  .app-header { padding: 0 var(--space-4); }
+  .toast-container {
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: var(--space-3);
+  }
+  .toast { min-width: 0; width: 100%; }
+}

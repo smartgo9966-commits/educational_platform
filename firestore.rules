@@ -75,14 +75,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------- classrooms ----------
-    match /classrooms/{classroomId} {
-      allow read:   if isAdmin() ||
-                       (isSignedIn() && (uid() in resource.data.teacherIds ||
-                                         uid() in resource.data.studentIds));
-      allow write:  if isAdmin();
-    }
-
     // ---------- activity_logs ----------
     match /activity_logs/{logId} {
       allow read:   if isAdmin() ||

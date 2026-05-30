@@ -200,6 +200,13 @@
   left: 0;
 }
 
+/* Let finger/stylus draw instead of scrolling/zooming the page. Essential
+   for the Smart Board (big touch screen) and phone drawing. */
+.board-main .canvas-container,
+.board-main canvas {
+  touch-action: none;
+}
+
 /* ---- QR Modal ------------------------------------------------------------ */
 
 .modal-qr {
@@ -275,10 +282,17 @@
 /* ---- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 768px) {
-  .board-toolbar { gap: 2px; padding: 4px 6px; }
-  .board-tool-btn { width: 32px; height: 32px; }
-  .board-size-btn { width: 28px; height: 28px; }
-  .board-save-btn span { display: none; }
+  /* Keep tool buttons finger-sized (see responsive.css) and let the toolbar
+     scroll horizontally instead of cramming/shrinking the controls. */
+  .board-toolbar {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;             /* Firefox */
+  }
+  .board-toolbar::-webkit-scrollbar { display: none; }
+  .board-save-btn span { display: none; }   /* icon-only save on small screens */
 }
 
 @media (max-width: 600px) {

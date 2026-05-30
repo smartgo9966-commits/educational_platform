@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Smart Go — Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../shared/css/base.css">
   <link rel="stylesheet" href="../shared/css/components.css">
   <link rel="stylesheet" href="./admin.css">
+  <link rel="stylesheet" href="../shared/css/responsive.css">
 </head>
 <body>
 
@@ -20,7 +21,12 @@
 
   <!-- App header -->
   <header class="app-header">
-    <a href="../index.html" class="brand-wordmark">Smart Go</a>
+    <div class="header-left">
+      <button class="hamburger-btn" id="sidebar-toggle" aria-label="Open navigation menu" aria-expanded="false">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="brand-wordmark">Smart Go</a>
+    </div>
     <div class="user-menu">
       <div class="avatar-placeholder" id="user-avatar">A</div>
       <span class="user-name" id="user-display-name">Admin</span>
@@ -30,6 +36,9 @@
 
   <!-- Main layout -->
   <div class="app-layout">
+
+    <!-- Mobile drawer backdrop -->
+    <div class="sidebar-backdrop hidden" id="sidebar-backdrop"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar">
