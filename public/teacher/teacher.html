@@ -180,6 +180,34 @@
     </div>
   </div>
 
+  <!-- ===== New Smart Board Capture Modal ===== -->
+  <div class="modal-backdrop hidden" id="smartboard-modal">
+    <div class="modal modal-upload">
+      <h3 class="modal-title">New Smart Board capture</h3>
+      <p class="text-muted" style="margin-bottom:var(--space-4)">Name this capture and choose the class it belongs to.</p>
+
+      <img id="smartboard-preview" alt="Smart Board snapshot preview">
+
+      <form id="smartboard-form" class="stack-4" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="smartboard-title">Title</label>
+          <input id="smartboard-title" class="input" type="text" placeholder="e.g. Algebra board — lesson 3" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="smartboard-classroom">Classroom</label>
+          <select id="smartboard-classroom" class="select" required>
+            <option value="">Select classroom…</option>
+          </select>
+        </div>
+        <div id="smartboard-error" class="form-error hidden"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="smartboard-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="smartboard-submit" disabled>Save to library</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===== Delete Confirm Modal ===== -->
   <div class="modal-backdrop hidden" id="delete-modal">
     <div class="modal">

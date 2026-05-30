@@ -397,6 +397,18 @@
 
 .modal-upload { max-width: 560px; }
 
+/* Smart Board capture preview */
+#smartboard-preview {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
 .upload-zone {
   border: 2px dashed var(--border-strong);
   border-radius: var(--radius-lg);

@@ -21,7 +21,8 @@ const appState = {
   activeClassroomId: '',
   unsubFiles:        null,
   selectedFileId:    null,
-  pendingFile:       null
+  pendingFile:       null,
+  pendingSession:    null
 };
 
 // ---- Header ---------------------------------------------------------------
@@ -53,11 +54,16 @@ async function loadClassrooms() {
       id:   d.id,
       name: d.data().displayName || d.id,
     }));
-    const sel  = document.getElementById('upload-classroom');
     const opts = appState.classrooms.map(c =>
       `<option value="${esc(c.id)}"${c.id === appState.activeClassroomId ? ' selected' : ''}>${esc(c.name)}</option>`
     ).join('');
-    sel.innerHTML = '<option value="">None</option>' + opts;
+
+    // Upload form — classroom is optional ("None").
+    document.getElementById('upload-classroom').innerHTML = '<option value="">None</option>' + opts;
+
+    // Smart Board capture form — classroom is required (placeholder leads).
+    document.getElementById('smartboard-classroom').innerHTML =
+      '<option value="">Select classroom…</option>' + opts;
   } catch (err) {
     console.warn('loadClassrooms failed:', err);
   }
@@ -346,9 +352,73 @@ async function closeScanner() {
 async function onQRScanned(sessionId) {
   await closeScanner();
   try {
-    const sessionRef = doc(db, 'board_sessions', sessionId);
-    const fileRef    = doc(collection(db, 'files'));
+    // Phase 1 — read & validate the session, then show the review form.
+    // The actual claim + file creation happens on Save (#smartboard-form).
+    const snap = await getDoc(doc(db, 'board_sessions', sessionId));
+    if (!snap.exists()) { toast('Invalid QR code.', 'error'); return; }
+    const s = snap.data();
+    if (s.claimed) { toast('That QR was already claimed.', 'error'); return; }
+    const expiresMs = s.expiresAt?.toMillis?.() ?? 0;
+    if (expiresMs < Date.now()) { toast('QR expired — generate a new one.', 'error'); return; }
 
+    appState.pendingSession = {
+      sessionId,
+      downloadURL: s.downloadURL || '',
+      storagePath: s.storagePath || ''
+    };
+
+    // Preview + editable defaults.
+    const preview = document.getElementById('smartboard-preview');
+    preview.src = s.downloadURL || '';
+    preview.style.display = s.downloadURL ? '' : 'none';
+    document.getElementById('smartboard-title').value = `Smart Board — ${new Date().toLocaleString()}`;
+    document.getElementById('smartboard-classroom').value = appState.activeClassroomId || '';
+    document.getElementById('smartboard-error').classList.add('hidden');
+    // Required classroom: Save stays disabled until one is chosen.
+    document.getElementById('smartboard-submit').disabled = !appState.activeClassroomId;
+
+    showModal('smartboard-modal');
+  } catch (err) {
+    console.error('QR read failed:', err);
+    toast(`Couldn't read that QR: ${err.code || err.message}`, 'error');
+  }
+}
+
+// Manual QR entry
+document.getElementById('manual-submit').addEventListener('click', () => {
+  const code = document.getElementById('manual-code').value.trim();
+  if (code) onQRScanned(code);
+});
+
+// ---- Smart Board capture — name + class, then claim & save ----------------
+document.getElementById('smartboard-classroom').addEventListener('change', (e) => {
+  document.getElementById('smartboard-submit').disabled = !e.target.value;
+});
+
+document.getElementById('smartboard-cancel').addEventListener('click', () => {
+  hideModal('smartboard-modal');
+  appState.pendingSession = null;   // leave the session unclaimed so it can be scanned again
+});
+
+document.getElementById('smartboard-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const session = appState.pendingSession;
+  if (!session) { hideModal('smartboard-modal'); return; }
+
+  const title       = document.getElementById('smartboard-title').value.trim();
+  const classroomId = document.getElementById('smartboard-classroom').value;
+  if (!title)       { showSmartboardError('Title is required.'); return; }
+  if (!classroomId) { showSmartboardError('Please choose a classroom.'); return; }
+
+  const submitBtn = document.getElementById('smartboard-submit');
+  submitBtn.disabled = true;
+  document.getElementById('smartboard-error').classList.add('hidden');
+
+  const sessionRef = doc(db, 'board_sessions', session.sessionId);
+  const fileRef    = doc(collection(db, 'files'));
+
+  try {
+    // Phase 2 — claim atomically and create the file with the chosen title/class.
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(sessionRef);
       if (!snap.exists()) throw Object.assign(new Error('Session not found.'), { code: 'not-found' });
@@ -365,33 +435,36 @@ async function onQRScanned(sessionId) {
 
       tx.set(fileRef, {
         ownerId:     currentUser.uid,
-        title:       `Smart Board — ${new Date().toLocaleString()}`,
+        title,
         category:    'smartboard',
         storagePath: s.storagePath || '',
         downloadURL: s.downloadURL  || '',
         mimeType:    'image/png',
         sizeBytes:   0,
-        classroomId: appState.activeClassroomId || '',
+        classroomId,
         source:      'smartboard',
         createdAt:   serverTimestamp()
       });
     });
 
-    await logActivity('scan_qr', sessionId);
+    await logActivity('scan_qr', session.sessionId);
+    appState.pendingSession = null;
+    hideModal('smartboard-modal');
     toast('Smart Board capture saved to your library!', 'success');
   } catch (err) {
-    if (err.code === 'already-claimed') toast('That QR was already claimed.', 'error');
-    else if (err.code === 'expired')    toast('QR expired — generate a new one.', 'error');
-    else if (err.code === 'not-found')  toast('Invalid QR code.', 'error');
-    else toast(`Error: ${err.message}`, 'error');
+    submitBtn.disabled = false;   // let them retry / pick a different class
+    if (err.code === 'already-claimed') showSmartboardError('That QR was already claimed on another device.');
+    else if (err.code === 'expired')    showSmartboardError('This QR expired — generate a new one on the board.');
+    else if (err.code === 'not-found')  showSmartboardError('This session no longer exists.');
+    else showSmartboardError(err.message || 'Could not save. Please try again.');
   }
-}
-
-// Manual QR entry
-document.getElementById('manual-submit').addEventListener('click', () => {
-  const code = document.getElementById('manual-code').value.trim();
-  if (code) onQRScanned(code);
 });
+
+function showSmartboardError(msg) {
+  const el = document.getElementById('smartboard-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
 
 // ---- Modal helpers --------------------------------------------------------
 function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
