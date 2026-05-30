@@ -35,7 +35,7 @@ await logActivity('login');
 const classroomIds = userData.classroomIds || [];
 
 if (classroomIds.length === 0) {
-  document.getElementById('files-loading').classList.add('hidden');
+  document.getElementById('files-loading')?.classList.add('hidden');
   showEmpty('You are not assigned to any classroom yet. Ask your admin.');
 } else {
   subscribeFiles(classroomIds);
@@ -85,7 +85,7 @@ async function prefetchTeacherNames(files) {
 // ---- Render files --------------------------------------------------------
 function renderFiles() {
   const grid = document.getElementById('files-grid');
-  document.getElementById('files-loading').classList.add('hidden');
+  document.getElementById('files-loading')?.classList.add('hidden');
 
   let filtered = state.files;
 

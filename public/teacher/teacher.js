@@ -107,9 +107,12 @@ window.addEventListener('beforeunload', () => appState.unsubFiles?.());
 function renderFiles() {
   const grid    = document.getElementById('files-grid');
   const emptyEl = document.getElementById('empty-state');
-  const loadEl  = document.getElementById('files-loading');
 
-  loadEl.classList.add('hidden');
+  // The spinner lives inside #files-grid, so the first render that writes
+  // grid.innerHTML removes it. Guard against it being gone on later renders —
+  // otherwise renderFiles() throws here and the grid never updates (which made
+  // the filter pills and search appear to do nothing).
+  document.getElementById('files-loading')?.classList.add('hidden');
 
   let filtered = appState.files;
   if (appState.filter !== 'all') {
