@@ -6,6 +6,7 @@ import { requireRole, signOut } from '../shared/js/auth.js';
 import { db } from '../shared/js/firebase-config.js';
 import { logActivity } from '../shared/js/activity.js';
 import { formatDateTime } from '../shared/js/ui.js';
+import { openAccountModal } from '../shared/js/account.js';
 
 // ---- Auth guard -----------------------------------------------------------
 const currentUser = await requireRole('student');
@@ -29,6 +30,38 @@ document.getElementById('user-avatar').textContent = displayName[0].toUpperCase(
 document.getElementById('greeting-name').textContent = displayName;
 
 document.getElementById('signout-btn').addEventListener('click', () => signOut());
+
+// ---- Account details popup ------------------------------------------------
+let classroomNames = null;
+async function resolveClassroomNames() {
+  if (classroomNames !== null) return classroomNames;
+  const ids = userData.classroomIds || [];
+  const names = await Promise.all(ids.map(async (id) => {
+    try {
+      const s = await getDoc(doc(db, 'users', id));
+      return s.exists() ? (s.data().displayName || id) : id;
+    } catch { return id; }
+  }));
+  classroomNames = names.join(', ');
+  return classroomNames;
+}
+async function showAccount() {
+  const classroom = await resolveClassroomNames();
+  openAccountModal({
+    title:    displayName,
+    subtitle: 'Student',
+    initial:  displayName,
+    rows: [
+      { label: 'Email',     value: currentUser.email || '' },
+      { label: 'Classroom', value: classroom || '' },
+    ],
+  });
+}
+const accountTrigger = document.getElementById('account-trigger');
+accountTrigger.addEventListener('click', showAccount);
+accountTrigger.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showAccount(); }
+});
 
 await logActivity('login');
 

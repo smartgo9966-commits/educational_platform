@@ -8,6 +8,7 @@ import { db, FIREBASE_API_KEY } from '../shared/js/firebase-config.js';
 import { toast, formatDateTime } from '../shared/js/ui.js';
 import { logActivity } from '../shared/js/activity.js';
 import { updateUser, freezeUser, deleteUser as dbDeleteUser } from '../shared/js/db.js';
+import { openAccountModal } from '../shared/js/account.js';
 
 // ---- Auth guard -----------------------------------------------------------
 const currentUser = await requireRole('admin');
@@ -20,6 +21,23 @@ document.getElementById('user-avatar').textContent =
 
 // Sign out
 document.getElementById('signout-btn').addEventListener('click', () => signOut());
+
+// ---- Account details popup ------------------------------------------------
+function showAccount() {
+  openAccountModal({
+    title:    currentUser.displayName || currentUser.email || 'Admin',
+    subtitle: 'Admin',
+    initial:  currentUser.displayName || 'A',
+    rows: [
+      { label: 'Email', value: currentUser.email || '' },
+    ],
+  });
+}
+const accountTrigger = document.getElementById('account-trigger');
+accountTrigger.addEventListener('click', showAccount);
+accountTrigger.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showAccount(); }
+});
 
 // ---- State ----------------------------------------------------------------
 const state = {

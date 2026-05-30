@@ -8,6 +8,7 @@ import { db } from '../shared/js/firebase-config.js';
 import { uploadFile } from '../shared/js/storage.js';
 import { toast, formatDateTime } from '../shared/js/ui.js';
 import { logActivity } from '../shared/js/activity.js';
+import { openAccountModal } from '../shared/js/account.js';
 
 // ---- Auth guard -----------------------------------------------------------
 const currentUser = await requireRole('teacher');
@@ -42,6 +43,26 @@ if (userData.classroomIds?.length) {
 }
 
 document.getElementById('signout-btn').addEventListener('click', () => signOut());
+
+// ---- Account details popup ------------------------------------------------
+function showAccount() {
+  const cls = document.getElementById('user-classroom').textContent;
+  openAccountModal({
+    title:    userData.displayName || currentUser.email || 'Teacher',
+    subtitle: 'Teacher',
+    initial:  userData.displayName || 'T',
+    rows: [
+      { label: 'Email',     value: currentUser.email || '' },
+      { label: 'Subject',   value: userData.subject || '' },
+      { label: 'Classroom', value: (cls && cls !== '—') ? cls : '' },
+    ],
+  });
+}
+const accountTrigger = document.getElementById('account-trigger');
+accountTrigger.addEventListener('click', showAccount);
+accountTrigger.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showAccount(); }
+});
 
 // ---- Load classrooms for upload form -------------------------------------
 // Classrooms live in the users collection with role='classroom' (admin
