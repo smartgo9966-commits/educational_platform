@@ -1,7 +1,7 @@
 import {
   collection, doc, getDoc, getDocs, getCountFromServer, setDoc, deleteDoc,
   query, where, orderBy, limit, onSnapshot,
-  serverTimestamp
+  serverTimestamp, writeBatch, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 import { requireRole, signOut, resetPassword } from '../shared/js/auth.js';
 import { db, FIREBASE_API_KEY } from '../shared/js/firebase-config.js';
@@ -49,7 +49,8 @@ const state = {
   searchTerm: '',
   selectedUser: null,
   classrooms: [],
-  unsubActivity: null
+  unsubActivity: null,
+  activityLimit: 20
 };
 
 // Files browser modal state (opened from the Files Uploaded stat card).
@@ -646,12 +647,14 @@ function loadActivityLog() {
   const q = query(
     collection(db, 'activity_logs'),
     orderBy('timestamp', 'desc'),
-    limit(20)
+    limit(state.activityLimit)
   );
   state.unsubActivity = onSnapshot(q, async (snap) => {
     const list = document.getElementById('activity-list');
+    const moreBtn = document.getElementById('activity-more');
     if (snap.empty) {
       list.innerHTML = '<p style="color:var(--text-tertiary);font-size:var(--text-sm)">No activity yet.</p>';
+      moreBtn.classList.add('hidden');
       return;
     }
     const logs = snap.docs.map(d => d.data());
@@ -667,8 +670,44 @@ function loadActivityLog() {
       <div class="activity-text">${actionText(log)}</div>
       <div class="activity-time">${formatDateTime(log.timestamp)}</div>
     </div>`).join('');
+    // If we got a full page, there may be older entries to load.
+    moreBtn.classList.toggle('hidden', snap.size < state.activityLimit);
   });
 }
+
+// "Load more" raises the live listener's limit and re-subscribes (keeps the
+// feed real-time while paging through history).
+document.getElementById('activity-more').addEventListener('click', () => {
+  state.activityLimit += 20;
+  state.unsubActivity?.();
+  loadActivityLog();
+});
+
+// ---- Maintenance: clear expired board sessions ----------------------------
+document.getElementById('clear-sessions-btn').addEventListener('click', () => {
+  confirmAction(
+    'Clear expired board sessions',
+    `Delete board sessions whose QR has already expired? This tidies up the database.
+     The snapshot images on Cloudinary are not affected.`,
+    async () => {
+      const q = query(
+        collection(db, 'board_sessions'),
+        where('expiresAt', '<', Timestamp.now()),
+        orderBy('expiresAt'),
+        limit(400)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) { toast('No expired sessions to clear.', 'success'); return; }
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      await logActivity('clear_sessions', null, { count: snap.size });
+      toast(`Cleared ${snap.size} expired session${snap.size === 1 ? '' : 's'}.`, 'success');
+      loadStats();
+    },
+    false
+  );
+});
 
 // ---- Files browser modal --------------------------------------------------
 async function prefetchUploaderNames(files) {
@@ -882,6 +921,7 @@ function actionText(log) {
     delete_user:    `${who} deleted a user`,
     create_session: `${who} created a board session`,
     claim_session:  `${who} claimed a board session`,
+    clear_sessions: `${who} cleared expired board sessions`,
   };
   return labels[log.action] || `${who}: ${esc(log.action)}`;
 }

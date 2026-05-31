@@ -72,7 +72,9 @@ service cloud.firestore {
                        request.resource.data.claimedBy == uid() &&
                        request.resource.data.diff(resource.data)
                          .changedKeys().hasOnly(['claimed', 'claimedBy', 'claimedAt']);
-      allow delete: if false;
+      // Admins can clean up expired/old sessions (manual maintenance in lieu of
+      // the scheduled Cloud Function on the free plan).
+      allow delete: if isAdmin();
     }
 
     // ---------- activity_logs ----------
